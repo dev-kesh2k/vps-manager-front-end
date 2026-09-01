@@ -227,27 +227,27 @@ export default function ServersPage() {
       {/* Toast Feedback */}
       {actionFeedback && (
         <div
-          className={`p-4 rounded-2xl border flex items-center justify-between transition-all shadow-xl ${
+          className={`p-4 rounded-lg border flex items-center justify-between transition-all ${
             actionFeedback.type === 'success'
-              ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
               : actionFeedback.type === 'error'
-              ? 'bg-rose-950/40 border-rose-500/30 text-rose-300'
-              : 'bg-indigo-950/40 border-indigo-500/30 text-indigo-300'
+              ? 'bg-rose-50 border-rose-200 text-rose-700'
+              : 'bg-blue-50 border-blue-200 text-[#0051c3]'
           }`}
         >
           <div className="flex items-center gap-3">
             {actionFeedback.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             ) : actionFeedback.type === 'error' ? (
-              <XCircle className="w-5 h-5 text-rose-400 shrink-0" />
+              <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
             ) : (
-              <Info className="w-5 h-5 text-indigo-400 shrink-0" />
+              <Info className="w-5 h-5 text-[#0051c3] shrink-0" />
             )}
             <p className="text-sm font-medium">{actionFeedback.message}</p>
           </div>
           <button
             onClick={() => setActionFeedback(null)}
-            className="text-xs px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-medium"
+            className="text-xs px-2.5 py-1 rounded-lg bg-[#f0f1f2] hover:bg-[#e5e6e8] text-[#1d1f20] font-medium"
           >
             Fechar
           </button>
@@ -255,15 +255,15 @@ export default function ServersPage() {
       )}
 
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/[0.06] pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+            <div className="p-2 rounded-md bg-[#f0f1f2] border border-[#e5e6e8] text-[#0051c3]">
               <Server className="w-5 h-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Servidores & Ambientes</h1>
+            <h1 className="text-[22px] font-semibold tracking-tight text-[#1d1f20]">Servidores & Ambientes</h1>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-[#4c4f52] mt-1">
             Alterne entre o ambiente WSL2 local e servidores Linux remotos (VPS, Dedicados ou Nuvem) via SSH.
           </p>
         </div>
@@ -275,13 +275,13 @@ export default function ServersPage() {
             className="btn-secondary flex items-center gap-2 text-xs py-2 px-3.5"
             title="Atualizar lista"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-brand-400' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#0051c3]' : ''}`} />
             <span>Atualizar</span>
           </button>
           {canManage && (
             <button
               onClick={handleOpenAdd}
-              className="btn-primary flex items-center gap-2 text-xs py-2 px-4 shadow-lg shadow-brand-600/20"
+              className="btn-primary flex items-center gap-2 text-xs py-2 px-4"
             >
               <Plus className="w-4 h-4" />
               <span>Adicionar Servidor</span>
@@ -292,12 +292,10 @@ export default function ServersPage() {
 
       {/* Active Server Hero Banner */}
       {activeServer && (
-        <div className="relative overflow-hidden rounded-3xl border border-brand-500/30 bg-gradient-to-br from-brand-950/40 via-[#0e111a] to-indigo-950/30 p-6 md:p-8 shadow-2xl backdrop-blur-xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-          
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-white border border-[#e5e6e8] rounded-lg p-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white shadow-xl shadow-brand-600/30 ring-2 ring-white/20 shrink-0">
+              <div className="w-11 h-11 rounded-md bg-[#0051c3] flex items-center justify-center text-white shrink-0">
                 {activeServer.type === 'wsl' ? (
                   <Server className="w-7 h-7" />
                 ) : activeServer.type === 'ssh' ? (
@@ -308,12 +306,12 @@ export default function ServersPage() {
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="text-xl font-bold text-white tracking-tight">{activeServer.name}</span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  <span className="text-xl font-bold text-[#1d1f20] tracking-tight">{activeServer.name}</span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     Servidor Ativo
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-white/[0.06] text-slate-300 border border-white/[0.08] uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#f6f7f8] text-[#4c4f52] border border-[#e5e6e8] uppercase tracking-wider">
                     {activeServer.type === 'wsl'
                       ? 'WSL 2 Local'
                       : activeServer.type === 'ssh'
@@ -321,16 +319,16 @@ export default function ServersPage() {
                       : 'Linux Nativo'}
                   </span>
                 </div>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-[#808487] mt-1">
                   {activeServer.description ||
                     (activeServer.type === 'wsl'
                       ? `Distribuição Linux: ${activeServer.wslDistro || 'Ubuntu'}`
                       : `Conexão SSH: ${activeServer.username || 'root'}@${activeServer.host || '127.0.0.1'}:${activeServer.port || 22}`)}
                 </p>
 
-                <div className="flex flex-wrap items-center gap-4 mt-4 text-xs text-slate-300">
-                  <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-xl border border-white/[0.06]">
-                    <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
+                <div className="flex flex-wrap items-center gap-4 mt-4 text-xs text-[#4c4f52]">
+                  <div className="flex items-center gap-1.5 bg-[#f6f7f8] px-3 py-1.5 rounded-md border border-[#e5e6e8]">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#0051c3]" />
                     <span>Todas as telas (Dashboard, Terminal, Apps, Arquivos) estão conectadas a este servidor.</span>
                   </div>
                 </div>
@@ -343,7 +341,7 @@ export default function ServersPage() {
                 disabled={testingId === activeServer.id}
                 className="btn-secondary text-xs py-2 px-4 flex items-center gap-2"
               >
-                <Zap className={`w-3.5 h-3.5 ${testingId === activeServer.id ? 'animate-bounce text-amber-400' : 'text-amber-400'}`} />
+                <Zap className={`w-3.5 h-3.5 ${testingId === activeServer.id ? 'animate-bounce text-amber-600' : 'text-amber-600'}`} />
                 <span>{testingId === activeServer.id ? 'Testando Conexão...' : 'Testar Conexão'}</span>
               </button>
             </div>
@@ -354,9 +352,9 @@ export default function ServersPage() {
       {/* Server Cards Grid */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-white flex items-center gap-2">
+          <h2 className="text-base font-semibold text-[#1d1f20] flex items-center gap-2">
             <span>Servidores Configurados</span>
-            <span className="px-2 py-0.5 rounded-lg text-xs bg-white/[0.06] text-slate-400 font-mono">
+            <span className="px-2 py-0.5 rounded-lg text-xs bg-[#f6f7f8] text-[#808487] font-mono">
               {servers.length}
             </span>
           </h2>
@@ -370,10 +368,10 @@ export default function ServersPage() {
             return (
               <div
                 key={server.id}
-                className={`relative rounded-2xl border p-5.5 transition-all duration-200 flex flex-col justify-between ${
+                className={`relative rounded-lg border p-5 transition-all duration-200 flex flex-col justify-between ${
                   isActive
-                    ? 'bg-brand-950/20 border-brand-500/40 shadow-xl shadow-brand-950/40 ring-1 ring-brand-500/20'
-                    : 'bg-[#0f121d]/70 border-white/[0.06] hover:border-white/15 hover:bg-[#121624]'
+                    ? 'bg-white border-[#0051c3] ring-1 ring-[#0051c3]/15'
+                    : 'bg-white border-[#e5e6e8] hover:border-[#c5c6c8]'
                 }`}
               >
                 <div>
@@ -381,10 +379,10 @@ export default function ServersPage() {
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-md ${
+                        className={`w-11 h-11 rounded-md flex items-center justify-center border ${
                           isActive
-                            ? 'bg-brand-500/20 border-brand-500/40 text-brand-300'
-                            : 'bg-white/[0.04] border-white/[0.08] text-slate-300'
+                            ? 'bg-blue-50 border-blue-200 text-[#0051c3]'
+                            : 'bg-[#f6f7f8] border-[#e5e6e8] text-[#4c4f52]'
                         }`}
                       >
                         {server.type === 'wsl' ? (
@@ -396,10 +394,10 @@ export default function ServersPage() {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white text-base leading-snug tracking-tight">
+                        <h3 className="font-semibold text-[#1d1f20] text-base leading-snug tracking-tight">
                           {server.name}
                         </h3>
-                        <span className="text-xs text-slate-400 font-mono">
+                        <span className="text-xs text-[#808487] font-mono">
                           {server.type === 'wsl'
                             ? `WSL · ${server.wslDistro || 'Ubuntu'}`
                             : server.type === 'ssh'
@@ -410,12 +408,12 @@ export default function ServersPage() {
                     </div>
 
                     {isActive ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         Ativo
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white/[0.04] text-slate-400 border border-white/[0.06] uppercase shrink-0">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#f6f7f8] text-[#808487] border border-[#e5e6e8] uppercase shrink-0">
                         {server.type}
                       </span>
                     )}
@@ -423,29 +421,29 @@ export default function ServersPage() {
 
                   {/* Description */}
                   {server.description && (
-                    <p className="text-xs text-slate-400 mb-4 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-[#808487] mb-4 line-clamp-2 leading-relaxed">
                       {server.description}
                     </p>
                   )}
 
                   {/* Details Meta */}
-                  <div className="bg-black/25 rounded-xl p-3 border border-white/[0.04] space-y-2 mb-4 text-xs font-mono">
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span className="text-slate-500">Tipo:</span>
-                      <span className="text-slate-300 uppercase">
+                  <div className="bg-[#f6f7f8] rounded-md p-3 border border-[#e5e6e8] space-y-2 mb-4 text-xs font-mono">
+                    <div className="flex items-center justify-between text-[#808487]">
+                      <span className="text-[#808487]">Tipo:</span>
+                      <span className="text-[#4c4f52] uppercase">
                         {server.type === 'wsl' ? 'WSL 2' : server.type === 'ssh' ? 'SSH 2' : 'Nativo'}
                       </span>
                     </div>
 
                     {server.type === 'ssh' && (
                       <>
-                        <div className="flex items-center justify-between text-slate-400">
-                          <span className="text-slate-500">Host:</span>
-                          <span className="text-indigo-300 font-medium">{server.host}</span>
+                        <div className="flex items-center justify-between text-[#808487]">
+                          <span className="text-[#808487]">Host:</span>
+                          <span className="text-[#0051c3] font-medium">{server.host}</span>
                         </div>
-                        <div className="flex items-center justify-between text-slate-400">
-                          <span className="text-slate-500">Autenticação:</span>
-                          <span className="text-slate-300">
+                        <div className="flex items-center justify-between text-[#808487]">
+                          <span className="text-[#808487]">Autenticação:</span>
+                          <span className="text-[#4c4f52]">
                             {server.authType === 'key' ? '🔑 Chave SSH' : '🔒 Senha'}
                           </span>
                         </div>
@@ -453,9 +451,9 @@ export default function ServersPage() {
                     )}
 
                     {server.type === 'wsl' && (
-                      <div className="flex items-center justify-between text-slate-400">
-                        <span className="text-slate-500">Distro:</span>
-                        <span className="text-brand-300">{server.wslDistro || 'Ubuntu'}</span>
+                      <div className="flex items-center justify-between text-[#808487]">
+                        <span className="text-[#808487]">Distro:</span>
+                        <span className="text-[#0051c3]">{server.wslDistro || 'Ubuntu'}</span>
                       </div>
                     )}
                   </div>
@@ -463,17 +461,17 @@ export default function ServersPage() {
                   {/* Test Result Live Badge */}
                   {test && (
                     <div
-                      className={`p-3 rounded-xl border text-xs mb-4 ${
+                      className={`p-3 rounded-md border text-xs mb-4 ${
                         test.success
-                          ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'
-                          : 'bg-rose-950/30 border-rose-500/30 text-rose-300'
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                          : 'bg-rose-50 border-rose-200 text-rose-700'
                       }`}
                     >
                       <div className="flex items-center gap-2 font-semibold">
                         {test.success ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         ) : (
-                          <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                          <XCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                         )}
                         <span>{test.success ? 'Conexão Estabelecida' : 'Falha no Teste'}</span>
                       </div>
@@ -485,7 +483,7 @@ export default function ServersPage() {
                 </div>
 
                 {/* Card Actions */}
-                <div className="border-t border-white/[0.06] pt-4 mt-2 flex items-center justify-between gap-2">
+                <div className="border-t border-[#e5e6e8] pt-4 mt-2 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     {!isActive && (
                       <button
@@ -498,13 +496,13 @@ export default function ServersPage() {
                     <button
                       onClick={() => handleTestCardConnection(server)}
                       disabled={testingId === server.id}
-                      className="btn-secondary text-xs py-1.5 px-2.5 text-slate-300"
+                      className="btn-secondary text-xs py-1.5 px-2.5 text-[#4c4f52]"
                       title="Testar Conexão"
                     >
                       {testingId === server.id ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" />
                       ) : (
-                        <Zap className="w-3.5 h-3.5 text-amber-400" />
+                        <Zap className="w-3.5 h-3.5 text-amber-600" />
                       )}
                     </button>
                   </div>
@@ -513,7 +511,7 @@ export default function ServersPage() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleOpenEdit(server)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                        className="p-1.5 rounded-lg text-[#808487] hover:text-[#1d1f20] hover:bg-[#f6f7f8] transition-colors"
                         title="Editar Configuração"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -522,7 +520,7 @@ export default function ServersPage() {
                       {!server.isDefault && (
                         <button
                           onClick={() => setDeleteConfirmId(server.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          className="p-1.5 rounded-lg text-[#808487] hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           title="Excluir Servidor"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -538,13 +536,13 @@ export default function ServersPage() {
       </div>
 
       {/* Informational Guidance */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0c0e16]/60 p-5 text-xs text-slate-400 leading-relaxed space-y-2">
-        <div className="flex items-center gap-2 font-semibold text-slate-200">
-          <Info className="w-4 h-4 text-brand-400" />
+      <div className="rounded-lg border border-[#e5e6e8] bg-white p-5 text-xs text-[#808487] leading-relaxed space-y-2">
+        <div className="flex items-center gap-2 font-semibold text-[#313335]">
+          <Info className="w-4 h-4 text-[#0051c3]" />
           <span>Como funciona a troca de servidores no VPS Kesh</span>
         </div>
         <p>
-          • <strong>WSL 2 (Local)</strong>: Utiliza o subsistema Linux integrado do Windows diretamente pelo <code className="text-brand-300 font-mono">wsl.exe</code>.
+          • <strong>WSL 2 (Local)</strong>: Utiliza o subsistema Linux integrado do Windows diretamente pelo <code className="text-[#0051c3] font-mono">wsl.exe</code>.
         </p>
         <p>
           • <strong>Servidor Remoto Linux (SSH / VPS)</strong>: Conecta-se de forma nativa e segura através do protocolo SSH2. Quando você define um servidor SSH como ativo, comandos, terminal web interativo, telemetria de CPU/RAM, catálogo de aplicativos e gerenciamento de arquivos operam diretamente na máquina remota.
@@ -556,25 +554,25 @@ export default function ServersPage() {
 
       {/* Modal: Adicionar / Editar Servidor */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-[#0d101a] p-6 md:p-8 shadow-2xl text-slate-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-6">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#1d1f20]/40 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl rounded-t-2xl sm:rounded-lg border border-[#e5e6e8] bg-white p-5 sm:p-6 md:p-8 text-[#313335] max-h-[92dvh] overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <div className="flex items-center justify-between border-b border-[#e5e6e8] pb-4 mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-brand-500/15 border border-brand-500/30 text-brand-400">
+                <div className="p-2.5 rounded-md bg-[#f0f1f2] border border-[#e5e6e8] text-[#0051c3]">
                   <Server className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">
+                  <h3 className="text-lg font-bold text-[#1d1f20]">
                     {editingServer ? 'Editar Servidor' : 'Adicionar Novo Servidor'}
                   </h3>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-[#808487]">
                     Configure as credenciais e parâmetros de conexão do nó
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-white/[0.06]"
+                className="text-[#808487] hover:text-[#1d1f20] p-2 rounded-xl hover:bg-[#f6f7f8]"
               >
                 <XCircle className="w-5 h-5" />
               </button>
@@ -588,43 +586,43 @@ export default function ServersPage() {
                   <button
                     type="button"
                     onClick={() => setFormData((f) => ({ ...f, type: 'ssh' }))}
-                    className={`p-3 rounded-xl border text-center transition-all ${
+                    className={`p-3 rounded-md border text-center transition-all ${
                       formData.type === 'ssh'
-                        ? 'bg-brand-600/20 border-brand-500 text-white shadow-lg ring-1 ring-brand-500/30'
-                        : 'bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-white'
+                        ? 'bg-blue-50 border-[#0051c3] text-[#1d1f20] ring-1 ring-[#0051c3]/15'
+                        : 'bg-white border-[#e5e6e8] text-[#4c4f52] hover:border-[#c5c6c8]'
                     }`}
                   >
-                    <Globe className="w-4 h-4 mx-auto mb-1 text-indigo-400" />
+                    <Globe className="w-4 h-4 mx-auto mb-1 text-[#0051c3]" />
                     <div className="text-xs font-semibold">SSH (Remoto)</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">VPS / Nuvem</div>
+                    <div className="text-[10px] text-[#808487] mt-0.5">VPS / Nuvem</div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setFormData((f) => ({ ...f, type: 'wsl' }))}
-                    className={`p-3 rounded-xl border text-center transition-all ${
+                    className={`p-3 rounded-md border text-center transition-all ${
                       formData.type === 'wsl'
-                        ? 'bg-brand-600/20 border-brand-500 text-white shadow-lg ring-1 ring-brand-500/30'
-                        : 'bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-white'
+                        ? 'bg-blue-50 border-[#0051c3] text-[#1d1f20] ring-1 ring-[#0051c3]/15'
+                        : 'bg-white border-[#e5e6e8] text-[#4c4f52] hover:border-[#c5c6c8]'
                     }`}
                   >
-                    <Server className="w-4 h-4 mx-auto mb-1 text-brand-400" />
+                    <Server className="w-4 h-4 mx-auto mb-1 text-[#0051c3]" />
                     <div className="text-xs font-semibold">WSL 2</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">Local Windows</div>
+                    <div className="text-[10px] text-[#808487] mt-0.5">Local Windows</div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setFormData((f) => ({ ...f, type: 'local' }))}
-                    className={`p-3 rounded-xl border text-center transition-all ${
+                    className={`p-3 rounded-md border text-center transition-all ${
                       formData.type === 'local'
-                        ? 'bg-brand-600/20 border-brand-500 text-white shadow-lg ring-1 ring-brand-500/30'
-                        : 'bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-white'
+                        ? 'bg-blue-50 border-[#0051c3] text-[#1d1f20] ring-1 ring-[#0051c3]/15'
+                        : 'bg-white border-[#e5e6e8] text-[#4c4f52] hover:border-[#c5c6c8]'
                     }`}
                   >
-                    <Cpu className="w-4 h-4 mx-auto mb-1 text-emerald-400" />
+                    <Cpu className="w-4 h-4 mx-auto mb-1 text-emerald-600" />
                     <div className="text-xs font-semibold">Linux Nativo</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">Host Direto</div>
+                    <div className="text-[10px] text-[#808487] mt-0.5">Host Direto</div>
                   </button>
                 </div>
               </div>
@@ -654,15 +652,15 @@ export default function ServersPage() {
                     value={formData.wslDistro}
                     onChange={(e) => setFormData({ ...formData, wslDistro: e.target.value })}
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Execute <code className="text-brand-300">wsl -l -v</code> no PowerShell para verificar o nome.
+                  <p className="text-[11px] text-[#808487] mt-1">
+                    Execute <code className="text-[#0051c3]">wsl -l -v</code> no PowerShell para verificar o nome.
                   </p>
                 </div>
               )}
 
               {/* SSH Specific Fields */}
               {formData.type === 'ssh' && (
-                <div className="space-y-4 rounded-2xl bg-black/20 p-4 border border-white/[0.05]">
+                <div className="space-y-4 rounded-lg bg-[#f6f7f8] p-4 border border-[#e5e6e8]">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2">
                       <label className="label">Host / Endereço IP</label>
@@ -763,17 +761,17 @@ export default function ServersPage() {
               {/* Modal Test Result */}
               {modalTestResult && (
                 <div
-                  className={`p-3.5 rounded-2xl border text-xs ${
+                  className={`p-3.5 rounded-lg border text-xs ${
                     modalTestResult.success
-                      ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
-                      : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                      : 'bg-rose-50 border-rose-200 text-rose-700'
                   }`}
                 >
                   <div className="flex items-center gap-2 font-semibold">
                     {modalTestResult.success ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     ) : (
-                      <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                      <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
                     )}
                     <span>{modalTestResult.message}</span>
                   </div>
@@ -789,14 +787,14 @@ export default function ServersPage() {
               )}
 
               {/* Actions Footer */}
-              <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-white/[0.08] pt-5">
+              <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-[#e5e6e8] pt-5">
                 <button
                   type="button"
                   onClick={handleTestModalConnection}
                   disabled={modalTesting || (formData.type === 'ssh' && !formData.host)}
                   className="btn-secondary w-full sm:w-auto text-xs py-2 px-4 flex items-center justify-center gap-2"
                 >
-                  <Zap className={`w-3.5 h-3.5 ${modalTesting ? 'animate-bounce text-amber-400' : 'text-amber-400'}`} />
+                  <Zap className={`w-3.5 h-3.5 ${modalTesting ? 'animate-bounce text-amber-600' : 'text-amber-600'}`} />
                   <span>{modalTesting ? 'Testando Conexão...' : 'Testar Conexão'}</span>
                 </button>
 
@@ -811,7 +809,7 @@ export default function ServersPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="btn-primary text-xs py-2 px-5 shadow-lg shadow-brand-600/30"
+                    className="btn-primary text-xs py-2 px-5"
                   >
                     {editingServer ? 'Salvar Alterações' : 'Adicionar Servidor'}
                   </button>
@@ -824,15 +822,15 @@ export default function ServersPage() {
 
       {/* Modal: Confirm Delete */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-rose-500/30 bg-[#0e111a] p-6 shadow-2xl text-slate-200">
-            <div className="flex items-center gap-3 text-rose-400 mb-4">
-              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#1d1f20]/40 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-t-2xl sm:rounded-lg border border-rose-200 bg-white p-5 sm:p-6 text-[#313335] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <div className="flex items-center gap-3 text-rose-600 mb-4">
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200">
                 <AlertTriangle className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white">Remover Servidor?</h3>
+              <h3 className="text-lg font-bold text-[#1d1f20]">Remover Servidor?</h3>
             </div>
-            <p className="text-sm text-slate-400 mb-6">
+            <p className="text-sm text-[#808487] mb-6">
               Tem certeza que deseja remover as credenciais e configuração deste servidor? Se ele estiver ativo, outro servidor padrão será selecionado.
             </p>
             <div className="flex items-center justify-end gap-3">

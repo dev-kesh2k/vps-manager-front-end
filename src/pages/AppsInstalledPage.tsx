@@ -21,10 +21,7 @@ import {
   FolderOpen,
   Database,
   Globe,
-  Server,
   Search,
-  SlidersHorizontal,
-  ArrowUpRight,
 } from 'lucide-react';
 import api from '../lib/api';
 
@@ -288,202 +285,177 @@ export default function AppsInstalledPage() {
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed bottom-6 right-6 z-50 max-w-md p-4 rounded-2xl shadow-2xl flex items-start gap-3 border backdrop-blur-xl animate-fade-in ${
+          className={`fixed left-4 right-4 sm:left-auto bottom-[max(1.5rem,env(safe-area-inset-bottom))] sm:right-6 z-50 sm:max-w-md p-4 rounded-lg shadow-lg flex items-start gap-3 border bg-white animate-fade-in ${
             toast.type === 'success'
-              ? 'bg-[#0a1f18]/95 border-emerald-500/40 text-emerald-100 shadow-emerald-950/50'
+              ? 'border-emerald-200 text-[#1d1f20]'
               : toast.type === 'error'
-              ? 'bg-[#220d13]/95 border-rose-500/40 text-rose-100 shadow-rose-950/50'
-              : 'bg-[#10141f]/95 border-white/[0.12] text-slate-100'
+              ? 'border-rose-200 text-[#1d1f20]'
+              : 'border-[#e5e6e8] text-[#1d1f20]'
           }`}
         >
           {toast.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
           ) : toast.type === 'error' ? (
-            <XCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
+            <XCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-[#0051c3] flex-shrink-0 mt-0.5" />
           )}
           <div className="flex-1 text-sm font-medium leading-relaxed">{toast.text}</div>
           <button
             onClick={() => setToast(null)}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/[0.08] transition-colors"
+            className="text-[#808487] hover:text-[#1d1f20] p-1 rounded hover:bg-[#f6f7f8] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Header & Page Title */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/[0.06]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
-            <span>Aplicações Instaladas</span>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/30">
-              {installedApps.length} Ativos
+          <h1 className="text-[22px] font-semibold tracking-tight text-[#1d1f20] flex items-center gap-2.5">
+            <span>Aplicações instaladas</span>
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#f0f1f2] text-[#4c4f52] border border-[#e5e6e8]">
+              {installedApps.length} ativos
             </span>
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Gerenciamento de containers, portas de acesso, proxy reverso Nginx e ciclo de vida
+          <p className="text-sm text-[#4c4f52] mt-1">
+            Containers, portas de acesso, proxy Nginx e ciclo de vida
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={load}
             disabled={loading}
-            className="btn-secondary text-xs px-3.5 py-2.5"
+            className="btn-secondary text-xs h-8"
             title="Atualizar status dos aplicativos"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-brand-400' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Atualizar</span>
           </button>
-
-          <a
-            href="/apps/install"
-            className="btn-primary text-xs px-4 py-2.5"
-          >
+          <a href="/apps/install" className="btn-primary text-xs h-8">
             <PackageCheck className="w-4 h-4" />
-            <span>+ Catálogo de Apps</span>
+            <span>Catálogo de apps</span>
           </a>
         </div>
       </div>
 
-      {/* Docker Compose Global Controller Bar */}
-      <div className="card p-5 bg-gradient-to-r from-[#121624] via-[#0f121c] to-[#0c0e15] border-white/[0.08] shadow-xl">
+      <div className="bg-white border border-[#e5e6e8] rounded-lg p-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600/30 to-indigo-500/20 border border-brand-500/30 flex items-center justify-center flex-shrink-0 text-brand-400">
-              <Layers className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-md bg-[#f0f1f2] border border-[#e5e6e8] flex items-center justify-center text-[#0051c3]">
+              <Layers className="w-4 h-4" />
             </div>
             <div>
-              <div className="font-bold text-white text-sm">Controle Global Docker Compose</div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Execute build e subida de containers em lote diretamente no host
+              <div className="font-medium text-[#1d1f20] text-sm">Controle global Docker Compose</div>
+              <p className="text-xs text-[#808487] mt-0.5">
+                Execute build e subida de containers em lote no host
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-2 bg-[#08090d]/90 border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-slate-300 focus-within:border-brand-500/80 transition-all">
-              <FolderOpen className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 bg-[#f6f7f8] border border-[#c5c6c8] rounded-md px-3 h-8 text-xs text-[#4c4f52] focus-within:border-[#0051c3]">
+              <FolderOpen className="w-3.5 h-3.5 text-[#808487] flex-shrink-0" />
               <input
                 type="text"
                 placeholder="Diretório (ex: /opt/apache ou .)"
                 value={globalComposePath}
                 onChange={(e) => setGlobalComposePath(e.target.value)}
-                className="bg-transparent border-none text-xs text-slate-200 focus:outline-none placeholder-slate-500 w-48 sm:w-64 font-mono"
+                className="bg-transparent border-none text-xs text-[#1d1f20] focus:outline-none placeholder-[#808487] w-48 sm:w-64 font-mono"
               />
             </div>
-
             <button
               onClick={() => handleDockerCompose('up', globalComposePath)}
               disabled={composeLoading}
-              className="btn-primary text-xs px-3.5 py-2"
+              className="btn-primary text-xs h-8"
               title="Executa: docker compose up -d --build"
             >
-              {composeLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Play className="w-3.5 h-3.5 fill-current" />
-              )}
+              {composeLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
               <span>Compose Up</span>
             </button>
-
             <button
               onClick={() => handleDockerCompose('down', globalComposePath)}
               disabled={composeLoading}
-              className="btn-danger text-xs px-3.5 py-2"
+              className="btn-danger text-xs h-8"
               title="Executa: docker compose down"
             >
-              {composeLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Power className="w-3.5 h-3.5" />
-              )}
+              {composeLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Power className="w-3.5 h-3.5" />}
               <span>Compose Down</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Search Input */}
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-[#808487] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar por nome, porta, descrição..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10 text-xs"
+            className="input pl-9 text-xs h-8"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="text-slate-400 hover:text-white absolute right-3 top-1/2 -translate-y-1/2 p-1"
+              className="text-[#808487] hover:text-[#1d1f20] absolute right-3 top-1/2 -translate-y-1/2 p-1"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* Status Filters */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs self-start sm:self-auto">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-[#f0f1f2] border border-[#e5e6e8] text-xs self-start sm:self-auto overflow-x-auto max-w-full">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-              statusFilter === 'all'
-                ? 'bg-brand-600 text-white shadow-sm font-semibold'
-                : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded font-medium shrink-0 ${
+              statusFilter === 'all' ? 'bg-white text-[#1d1f20] shadow-sm' : 'text-[#4c4f52] hover:text-[#1d1f20]'
             }`}
           >
             Todos ({installedApps.length})
           </button>
           <button
             onClick={() => setStatusFilter('running')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-              statusFilter === 'running'
-                ? 'bg-emerald-600 text-white shadow-sm font-semibold'
-                : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded font-medium flex items-center gap-1.5 shrink-0 ${
+              statusFilter === 'running' ? 'bg-white text-[#1d1f20] shadow-sm' : 'text-[#4c4f52] hover:text-[#1d1f20]'
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             Rodando ({runningCount})
           </button>
           <button
             onClick={() => setStatusFilter('stopped')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-              statusFilter === 'stopped'
-                ? 'bg-amber-600 text-white shadow-sm font-semibold'
-                : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded font-medium flex items-center gap-1.5 shrink-0 ${
+              statusFilter === 'stopped' ? 'bg-white text-[#1d1f20] shadow-sm' : 'text-[#4c4f52] hover:text-[#1d1f20]'
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
             Parados ({stoppedCount})
           </button>
         </div>
       </div>
 
       {/* Main Grid with Category Filter Pill Strip */}
-      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4 lg:gap-6">
         {/* Category Filter Sidebar */}
-        <aside className="space-y-4">
-          <div className="card p-4 space-y-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 px-2 pb-1 border-b border-white/[0.06]">
+        <aside className="space-y-4 min-w-0">
+          <div className="card p-3 lg:p-4 space-y-2">
+            <div className="hidden lg:block text-[11px] font-semibold uppercase tracking-wider text-[#808487] px-2 pb-1 border-b border-[#e5e6e8]">
               Categorias
             </div>
-            <div className="space-y-1 pt-1">
+            <div className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 lg:pt-1">
               <button
                 onClick={() => setActiveCategory('all')}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between gap-2 px-3 py-2 lg:py-1.5 rounded-md text-[13px] ${
                   activeCategory === 'all'
-                    ? 'bg-brand-500/15 text-brand-300 border border-brand-500/30 font-semibold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                    ? 'bg-[#f0f1f2] text-[#1d1f20] font-medium'
+                    : 'text-[#313335] hover:bg-[#f6f7f8]'
                 }`}
               >
-                <span>Todas as Aplicações</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/[0.06] text-slate-300 font-mono">
+                <span>Todas</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#f6f7f8] text-[#4c4f52] font-mono">
                   {installedApps.length}
                 </span>
               </button>
@@ -495,17 +467,17 @@ export default function AppsInstalledPage() {
                   <button
                     key={c.key}
                     onClick={() => setActiveCategory(c.key)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    className={`shrink-0 lg:w-full flex items-center justify-between gap-2 px-3 py-2 lg:py-1.5 rounded-md text-[13px] ${
                       isActive
-                        ? 'bg-brand-500/15 text-brand-300 border border-brand-500/30 font-semibold'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                        ? 'bg-[#f0f1f2] text-[#1d1f20] font-medium'
+                        : 'text-[#313335] hover:bg-[#f6f7f8]'
                     }`}
                   >
                     <span className="flex items-center gap-2 truncate">
                       <span>{c.emoji}</span>
                       <span className="truncate">{c.label}</span>
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/[0.06] text-slate-300 font-mono">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#f6f7f8] text-[#4c4f52] font-mono">
                       {count}
                     </span>
                   </button>
@@ -515,19 +487,19 @@ export default function AppsInstalledPage() {
           </div>
 
           {/* Status Reference Card */}
-          <div className="card p-4 text-xs text-slate-400 space-y-2.5">
-            <div className="font-semibold text-slate-200 text-xs">Legenda de Status</div>
+          <div className="hidden lg:block card p-4 text-xs text-[#808487] space-y-2.5">
+            <div className="font-semibold text-[#313335] text-xs">Legenda de Status</div>
             <div className="flex items-center gap-2 text-xs">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-slate-300">Porta ouvindo / Container ativo</span>
+              <span className="text-[#4c4f52]">Porta ouvindo / Container ativo</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-              <span className="text-slate-300">Instalado porém parado</span>
+              <span className="text-[#4c4f52]">Instalado porém parado</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-400" />
-              <span className="text-slate-300">Proxy Nginx / Subdomínio ativo</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#0051c3]" />
+              <span className="text-[#4c4f52]">Proxy Nginx / Subdomínio ativo</span>
             </div>
           </div>
         </aside>
@@ -539,22 +511,22 @@ export default function AppsInstalledPage() {
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="card p-5 space-y-4 animate-pulse">
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white/[0.05]" />
+                    <div className="w-10 h-10 rounded-md bg-[#f0f1f2]" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-white/[0.08] rounded w-1/2" />
-                      <div className="h-3 bg-white/[0.04] rounded w-1/3" />
+                      <div className="h-4 bg-[#f0f1f2] rounded w-1/2" />
+                      <div className="h-3 bg-[#f6f7f8] rounded w-1/3" />
                     </div>
                   </div>
-                  <div className="h-10 bg-white/[0.04] rounded-xl" />
-                  <div className="h-8 bg-white/[0.04] rounded-xl" />
+                  <div className="h-10 bg-[#f6f7f8] rounded-xl" />
+                  <div className="h-8 bg-[#f6f7f8] rounded-xl" />
                 </div>
               ))}
             </div>
           ) : filteredApps.length === 0 ? (
-            <div className="card p-12 text-center text-slate-400 space-y-3">
-              <AlertCircle className="w-12 h-12 mx-auto text-slate-600" />
-              <div className="text-base font-bold text-slate-200">Nenhum aplicativo encontrado</div>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <div className="card p-12 text-center text-[#808487] space-y-3">
+              <AlertCircle className="w-10 h-10 mx-auto text-[#c5c6c8]" />
+              <div className="text-base font-bold text-[#313335]">Nenhum aplicativo encontrado</div>
+              <p className="text-xs text-[#808487] max-w-sm mx-auto">
                 {searchQuery
                   ? 'Nenhum resultado corresponde aos termos da pesquisa.'
                   : 'Nenhum aplicativo instalado nesta categoria.'}
@@ -579,25 +551,25 @@ export default function AppsInstalledPage() {
                 return (
                   <div
                     key={app.id}
-                    className={`card p-5 flex flex-col justify-between space-y-4 transition-all hover:border-white/[0.14] ${
-                      app.running === true ? 'ring-1 ring-emerald-500/20' : ''
+                    className={`bg-white border border-[#e5e6e8] rounded-lg p-4 flex flex-col justify-between space-y-4 ${
+                      app.running === true ? 'border-l-2 border-l-emerald-500' : ''
                     }`}
                   >
                     <div className="space-y-3">
                       {/* Top Header Card */}
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-[#141824] border border-white/[0.08] flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+                          <div className="w-10 h-10 rounded-md bg-[#f6f7f8] border border-[#e5e6e8] flex items-center justify-center text-xl flex-shrink-0">
                             {app.icon}
                           </div>
                           <div>
-                            <div className="font-bold text-white text-base tracking-tight flex items-center gap-2">
+                            <div className="font-bold text-[#1d1f20] text-base tracking-tight flex items-center gap-2">
                               <span>{app.name}</span>
                               {app.running === true && (
                                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Em execução" />
                               )}
                             </div>
-                            <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
+                            <div className="text-xs text-[#808487] mt-0.5 flex items-center gap-1.5">
                               <span>{categories.find((c) => c.key === app.category)?.emoji}</span>
                               <span>{categories.find((c) => c.key === app.category)?.label || app.category}</span>
                             </div>
@@ -606,7 +578,7 @@ export default function AppsInstalledPage() {
 
                         <button
                           onClick={() => setExpandedId(isExpanded ? null : app.id)}
-                          className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                          className="p-1.5 rounded-xl text-[#808487] hover:text-[#1d1f20] hover:bg-[#f6f7f8] transition-colors"
                           title={isExpanded ? 'Recolher detalhes' : 'Ver detalhes técnicos'}
                         >
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -614,37 +586,37 @@ export default function AppsInstalledPage() {
                       </div>
 
                       {/* Description */}
-                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed min-h-[2rem]">
+                      <p className="text-xs text-[#808487] line-clamp-2 leading-relaxed min-h-[2rem]">
                         {app.description}
                       </p>
 
                       {/* Pill Badges */}
                       <div className="flex flex-wrap items-center gap-1.5 pt-1">
                         {app.running === true ? (
-                          <span className="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="badge bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             Rodando
                           </span>
                         ) : app.running === false ? (
-                          <span className="badge bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                          <span className="badge bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Parado
                           </span>
                         ) : (
-                          <span className="badge bg-slate-800 text-slate-300 border border-white/[0.08]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          <span className="badge bg-[#f0f1f2] text-[#4c4f52] border border-[#e5e6e8]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             Instalado
                           </span>
                         )}
 
                         {typeof app.defaultPort === 'number' && (
-                          <span className="badge bg-sky-500/10 text-sky-400 border border-sky-500/20 font-mono text-[11px]">
+                          <span className="badge bg-[#f0f1f2] text-[#313335] border border-[#e5e6e8] font-mono text-[11px]">
                             Porta {app.defaultPort}
                           </span>
                         )}
 
                         {(app.isDocker || app.composePath) && (
-                          <span className="badge bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px]">
+                          <span className="badge bg-blue-50 text-[#0051c3] border border-blue-100 text-[10px]">
                             Docker
                           </span>
                         )}
@@ -652,7 +624,7 @@ export default function AppsInstalledPage() {
                     </div>
 
                     {/* App Actions & Links Strip */}
-                    <div className="space-y-2 pt-3 border-t border-white/[0.06]">
+                    <div className="space-y-2 pt-3 border-t border-[#e5e6e8]">
                       {/* Direct Web UI Access */}
                       {appUrl && (
                         <div className="flex items-center gap-2">
@@ -667,7 +639,7 @@ export default function AppsInstalledPage() {
                           </a>
                           <button
                             onClick={(e) => copyToClipboard(appUrl, app.id, e)}
-                            className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/[0.08] transition-colors"
+                            className="p-2 rounded-xl bg-[#f6f7f8] hover:bg-[#f6f7f8] text-[#4c4f52] border border-[#e5e6e8] transition-colors"
                             title="Copiar URL"
                           >
                             {copiedUrl === app.id ? (
@@ -685,10 +657,10 @@ export default function AppsInstalledPage() {
                           <button
                             type="button"
                             onClick={(e) => copyToClipboard(app.connectionString!, `conn-${app.id}`, e)}
-                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-600/40 shadow-sm transition-all group"
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200"
                             title="Copiar URI de Conexão do Banco"
                           >
-                            <Database className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                            <Database className="w-3.5 h-3.5" />
                             <span className="truncate">
                               {copiedUrl === `conn-${app.id}` ? 'Copiado para o Clip!' : 'Copiar URI do Banco'}
                             </span>
@@ -696,7 +668,7 @@ export default function AppsInstalledPage() {
                           <button
                             type="button"
                             onClick={(e) => copyToClipboard(app.connectionString!, `conn-${app.id}`, e)}
-                            className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/[0.08] transition-colors"
+                            className="p-2 rounded-xl bg-[#f6f7f8] hover:bg-[#f6f7f8] text-[#4c4f52] border border-[#e5e6e8] transition-colors"
                             title="Copiar string de conexão"
                           >
                             {copiedUrl === `conn-${app.id}` ? (
@@ -715,10 +687,10 @@ export default function AppsInstalledPage() {
                             href={getNginxPathUrl(app) || getNginxSubdomainUrl(app) || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-500/40 shadow-sm transition-all group"
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium bg-blue-50 hover:bg-blue-100 text-[#0051c3] border border-blue-200"
                             title={`Acessar pelo Nginx Proxy (${getNginxPathUrl(app) || getNginxSubdomainUrl(app)})`}
                           >
-                            <Globe className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform" />
+                            <Globe className="w-3.5 h-3.5" />
                             <span className="truncate">
                               Nginx: {app.nginxPath ? `http://localhost${app.nginxPath}` : `http://${app.nginxSubdomain}`}
                             </span>
@@ -726,7 +698,7 @@ export default function AppsInstalledPage() {
                           <button
                             type="button"
                             onClick={(e) => copyToClipboard(getNginxPathUrl(app) || getNginxSubdomainUrl(app) || '', `nginx-${app.id}`, e)}
-                            className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/[0.08] transition-colors"
+                            className="p-2 rounded-xl bg-[#f6f7f8] hover:bg-[#f6f7f8] text-[#4c4f52] border border-[#e5e6e8] transition-colors"
                             title="Copiar URL Nginx"
                           >
                             {copiedUrl === `nginx-${app.id}` ? (
@@ -743,10 +715,10 @@ export default function AppsInstalledPage() {
                         <button
                           onClick={(e) => handleAppAction(app.id, 'start', e)}
                           disabled={isActionBusy || app.running === true}
-                          className={`inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                          className={`inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium ${
                             app.running === true
-                              ? 'bg-white/[0.02] text-slate-600 border border-white/[0.04] cursor-not-allowed'
-                              : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              ? 'bg-[#f6f7f8] text-[#808487] border border-[#e5e6e8] cursor-not-allowed'
+                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
                           }`}
                           title="Iniciar aplicação"
                         >
@@ -761,10 +733,10 @@ export default function AppsInstalledPage() {
                         <button
                           onClick={(e) => handleAppAction(app.id, 'stop', e)}
                           disabled={isActionBusy || app.running === false}
-                          className={`inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                          className={`inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium ${
                             app.running === false
-                              ? 'bg-white/[0.02] text-slate-600 border border-white/[0.04] cursor-not-allowed'
-                              : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              ? 'bg-[#f6f7f8] text-[#808487] border border-[#e5e6e8] cursor-not-allowed'
+                              : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
                           }`}
                           title="Parar aplicação"
                         >
@@ -779,7 +751,7 @@ export default function AppsInstalledPage() {
                         <button
                           onClick={(e) => handleAppAction(app.id, 'restart', e)}
                           disabled={isActionBusy}
-                          className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-medium bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 border border-white/[0.08] transition-all disabled:opacity-50"
+                          className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium bg-white hover:bg-[#f6f7f8] text-[#313335] border border-[#c5c6c8] disabled:opacity-50"
                           title="Reiniciar aplicação"
                         >
                           {currentAction === 'restart' ? (
@@ -797,7 +769,7 @@ export default function AppsInstalledPage() {
                           <button
                             onClick={(e) => handleDockerCompose('up', app.composePath, app.id, e)}
                             disabled={isActionBusy}
-                            className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-medium bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 transition-all disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium bg-blue-50 hover:bg-blue-100 text-[#0051c3] border border-blue-200 disabled:opacity-50"
                             title="docker compose up -d --build"
                           >
                             {currentAction === 'compose-up' ? (
@@ -811,7 +783,7 @@ export default function AppsInstalledPage() {
                           <button
                             onClick={(e) => handleDockerCompose('down', app.composePath, app.id, e)}
                             disabled={isActionBusy}
-                            className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-medium bg-white/[0.04] hover:bg-rose-500/15 text-slate-300 hover:text-rose-300 border border-white/[0.08] hover:border-rose-500/30 transition-all disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium bg-white hover:bg-rose-50 text-[#4c4f52] hover:text-rose-700 border border-[#c5c6c8] hover:border-rose-200 disabled:opacity-50"
                             title="docker compose down"
                           >
                             {currentAction === 'compose-down' ? (
@@ -827,11 +799,11 @@ export default function AppsInstalledPage() {
 
                     {/* Expanded Technical Details */}
                     {isExpanded && (
-                      <div className="pt-3 mt-2 border-t border-white/[0.06] space-y-2.5 text-xs animate-fade-in">
+                      <div className="pt-3 mt-2 border-t border-[#e5e6e8] space-y-2.5 text-xs animate-fade-in">
                         {app.version && (
                           <div className="flex items-start gap-2">
-                            <span className="text-slate-400 font-medium min-w-[70px]">Versão:</span>
-                            <span className="text-slate-200 font-mono text-[11px] break-all">
+                            <span className="text-[#808487] font-medium min-w-[70px]">Versão:</span>
+                            <span className="text-[#313335] font-mono text-[11px] break-all">
                               {app.version}
                             </span>
                           </div>
@@ -839,20 +811,20 @@ export default function AppsInstalledPage() {
 
                         {app.composePath && (
                           <div className="flex items-start gap-2">
-                            <span className="text-slate-400 font-medium min-w-[70px]">Pasta:</span>
-                            <span className="text-slate-200 font-mono text-[11px] bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
+                            <span className="text-[#808487] font-medium min-w-[70px]">Pasta:</span>
+                            <span className="text-[#313335] font-mono text-[11px] bg-[#f6f7f8] px-1.5 py-0.5 rounded border border-[#e5e6e8]">
                               {app.composePath}
                             </span>
                           </div>
                         )}
 
                         {app.postInstallHint && (
-                          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-slate-300 space-y-1">
-                            <div className="font-semibold text-slate-200 flex items-center gap-1 text-[11px]">
+                          <div className="p-3 rounded-xl bg-[#f6f7f8] border border-[#e5e6e8] text-[#4c4f52] space-y-1">
+                            <div className="font-semibold text-[#313335] flex items-center gap-1 text-[11px]">
                               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                               Instruções de Acesso:
                             </div>
-                            <div className="text-[11px] text-slate-400 leading-relaxed">
+                            <div className="text-[11px] text-[#808487] leading-relaxed">
                               {app.postInstallHint}
                             </div>
                           </div>
@@ -869,40 +841,40 @@ export default function AppsInstalledPage() {
 
       {/* Terminal Output Modal for Docker Compose */}
       {composeModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="card w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-white/[0.12] shadow-2xl bg-[#0a0c12]">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#1d1f20]/40 animate-fade-in">
+          <div className="w-full max-w-2xl max-h-[92dvh] flex flex-col overflow-hidden bg-white border border-[#e5e6e8] rounded-t-2xl sm:rounded-lg shadow-xl pb-[env(safe-area-inset-bottom)]">
             {/* Modal Header */}
-            <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
-              <div className="flex items-center gap-2.5 font-mono text-sm text-white font-semibold">
-                <Terminal className="w-4 h-4 text-brand-400" />
+            <div className="px-5 py-4 border-b border-[#e5e6e8] flex items-center justify-between bg-[#f6f7f8]">
+              <div className="flex items-center gap-2.5 font-mono text-sm text-[#1d1f20] font-semibold">
+                <Terminal className="w-4 h-4 text-[#0051c3]" />
                 <span className="truncate">{composeModal.title}</span>
               </div>
               <button
                 onClick={() => setComposeModal({ open: false, title: '', output: '' })}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/[0.06] transition-colors"
+                className="text-[#808487] hover:text-[#1d1f20] p-1 rounded-lg hover:bg-[#f6f7f8] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Modal Terminal Body */}
-            <div className="p-5 flex-1 overflow-y-auto font-mono text-xs text-slate-300 bg-[#06070a] leading-relaxed whitespace-pre-wrap select-text">
+            <div className="p-5 flex-1 overflow-y-auto font-mono text-xs text-[#4c4f52] bg-white leading-relaxed whitespace-pre-wrap select-text">
               {composeModal.output}
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-3 border-t border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
+            <div className="px-5 py-3 border-t border-[#e5e6e8] flex items-center justify-between bg-[#f6f7f8]">
               <div className="flex items-center gap-2 text-xs">
                 {composeModal.running ? (
-                  <span className="flex items-center gap-1.5 text-amber-400 font-medium">
+                  <span className="flex items-center gap-1.5 text-amber-700 font-medium">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> Em execução...
                   </span>
                 ) : composeModal.success ? (
-                  <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Sucesso
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1.5 text-slate-400">
+                  <span className="flex items-center gap-1.5 text-[#808487]">
                     Finalizado
                   </span>
                 )}

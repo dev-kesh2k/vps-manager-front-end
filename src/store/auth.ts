@@ -11,7 +11,9 @@ export type ScreenKey =
   | 'appsInstalled'
   | 'appsInstall'
   | 'users'
-  | 'servers';
+  | 'servers'
+  | 'websites'
+  | 'aplicacoes';
 
 export type AccessLevel = 'read' | 'full';
 export type Role = 'admin' | 'operator' | 'viewer';

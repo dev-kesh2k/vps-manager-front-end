@@ -13,15 +13,13 @@ import {
   PackageCheck,
   PackagePlus,
   Users,
-  Shield,
-  Activity,
   Globe,
-  ChevronRight,
+  Boxes,
   ChevronDown,
   Check,
   Plus,
-  Settings,
   Cpu,
+  Search,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore, ScreenKey } from '../store/auth';
@@ -34,27 +32,22 @@ type NavItem = {
   end?: boolean;
   screen: ScreenKey;
   section?: string;
-  badge?: string;
 };
 
 const ALL_NAV: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, screen: 'dashboard', section: 'Visão Geral' },
-  { to: '/apps/installed', label: 'Apps Instalados', icon: PackageCheck, screen: 'appsInstalled', section: 'Aplicações' },
-  { to: '/apps/install', label: 'Instalar Apps', icon: PackagePlus, screen: 'appsInstall', section: 'Aplicações' },
+  { to: '/', label: 'Página inicial', icon: LayoutDashboard, end: true, screen: 'dashboard', section: 'Recentes' },
+  { to: '/aplicacoes', label: 'Aplicações', icon: Boxes, screen: 'aplicacoes', section: 'Aplicações' },
+  { to: '/apps/installed', label: 'Apps instalados', icon: PackageCheck, screen: 'appsInstalled', section: 'Aplicações' },
+  { to: '/apps/install', label: 'Instalar apps', icon: PackagePlus, screen: 'appsInstall', section: 'Aplicações' },
+  { to: '/websites', label: 'Website', icon: Globe, screen: 'websites', section: 'Aplicações' },
   { to: '/terminal', label: 'Terminal SSH', icon: TerminalSquare, screen: 'terminal', section: 'Sistema' },
-  { to: '/command', label: 'Executar Comando', icon: SlidersHorizontal, screen: 'command', section: 'Sistema' },
-  { to: '/services', label: 'Serviços Systemd', icon: Play, screen: 'services', section: 'Sistema' },
-  { to: '/files', label: 'Gerenciador Arquivos', icon: FolderOpen, screen: 'files', section: 'Armazenamento' },
-  { to: '/logs', label: 'Visualizador de Logs', icon: ScrollText, screen: 'logs', section: 'Monitoramento' },
-  { to: '/servers', label: 'Servidores & Nós', icon: Server, screen: 'servers', section: 'Administração' },
-  { to: '/users', label: 'Gerenciar Usuários', icon: Users, screen: 'users', section: 'Administração' },
+  { to: '/command', label: 'Executar comando', icon: SlidersHorizontal, screen: 'command', section: 'Sistema' },
+  { to: '/services', label: 'Serviços systemd', icon: Play, screen: 'services', section: 'Sistema' },
+  { to: '/files', label: 'Arquivos', icon: FolderOpen, screen: 'files', section: 'Observe' },
+  { to: '/logs', label: 'Logs', icon: ScrollText, screen: 'logs', section: 'Observe' },
+  { to: '/servers', label: 'Servidores', icon: Server, screen: 'servers', section: 'Build' },
+  { to: '/users', label: 'Usuários', icon: Users, screen: 'users', section: 'Build' },
 ];
-
-const roleBadge = (role: string | null): { bg: string; text: string; border: string } => {
-  if (role === 'admin') return { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/20' };
-  if (role === 'operator') return { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
-  return { bg: 'bg-indigo-500/10', text: 'text-indigo-400', border: 'border-indigo-500/20' };
-};
 
 const roleLabel = (role: string | null): string => {
   if (role === 'admin') return 'Administrador';
@@ -74,89 +67,102 @@ export default function AppLayout() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [serverDropdownOpen, setServerDropdownOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState<string>('');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [navQuery, setNavQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchServers();
   }, [fetchServers]);
 
   useEffect(() => {
-    const update = () => {
-      setCurrentTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    };
-    update();
-    const timer = setInterval(update, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    setMenuOpen(false);
+  }, [location.pathname]);
 
-  // Close dropdown on click outside
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: Event) => {
+      const target = e.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setServerDropdownOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setUserMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
-  const visible = ALL_NAV.filter((item) => canAccess(item.screen, 'read'));
-  const currentItem = ALL_NAV.find((item) => (item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)));
-  const roleStyle = roleBadge(role);
+  const visible = ALL_NAV.filter((item) => canAccess(item.screen, 'read')).filter((item) =>
+    item.label.toLowerCase().includes(navQuery.trim().toLowerCase())
+  );
+  const currentItem = ALL_NAV.find((item) =>
+    item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)
+  );
 
   return (
-    <div className="min-h-screen flex bg-[#08090d] text-slate-200">
-      {/* Sidebar Desktop & Mobile Drawer */}
+    <div className="min-h-dvh flex bg-[#f6f7f8] text-[#1d1f20]">
       <aside
         className={`${
           menuOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 transition-transform duration-200 ease-out md:flex md:flex-col w-72 border-r border-white/[0.07] bg-[#0c0e15]/95 backdrop-blur-2xl fixed md:static inset-y-0 left-0 z-40 flex flex-col justify-between`}
+        } md:translate-x-0 transition-transform duration-200 ease-out md:flex md:flex-col w-[min(260px,85vw)] border-r border-[#e5e6e8] bg-white fixed md:static inset-y-0 left-0 z-40 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]`}
       >
-        {/* Brand Header */}
-        <div>
-          <div className="h-20 px-6 flex items-center justify-between border-b border-white/[0.06]">
-            <div className="flex items-center gap-3.5">
-              <div className="relative">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-600/30 ring-1 ring-white/20">
-                  <Server className="w-5 h-5 text-white" />
-                </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-[#0c0e15]" />
+        <div className="px-4 pt-4 pb-3">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded bg-[#0051c3] flex items-center justify-center shrink-0">
+                <Server className="w-3.5 h-3.5 text-white" />
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-sm tracking-tight text-white truncate">Kesh VPS</span>
-                  <span className="text-[10px] font-semibold tracking-wide uppercase px-1.5 py-0.5 rounded-md bg-brand-500/15 text-brand-400 border border-brand-500/20">
-                    Engine
-                  </span>
-                </div>
-                <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  <span className="truncate">{activeServer?.name || 'WSL2 Ubuntu'}</span>
-                </div>
-              </div>
+              <span className="font-semibold text-[15px] tracking-tight text-[#1d1f20] truncate">
+                Central Hub
+              </span>
             </div>
             <button
-              className="md:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/[0.05]"
+              className="md:hidden text-[#4c4f52] hover:text-[#1d1f20] p-2 rounded hover:bg-[#f0f1f2]"
               onClick={() => setMenuOpen(false)}
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Navigation Items */}
-          <nav className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-190px)]">
-            {(() => {
-              const sections: Record<string, NavItem[]> = {};
-              for (const item of visible) {
-                const s = item.section || 'Geral';
-                (sections[s] ||= []).push(item);
-              }
-              return Object.entries(sections).map(([section, items]) => (
-                <div key={section} className="space-y-1">
-                  <div className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                    <span>{section}</span>
-                  </div>
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-[#808487] absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={navQuery}
+              onChange={(e) => setNavQuery(e.target.value)}
+              placeholder="Pesquisa rápida..."
+              className="w-full h-10 sm:h-8 pl-8 pr-3 sm:pr-12 rounded-md bg-[#f6f7f8] border border-[#e5e6e8] text-xs text-[#1d1f20] placeholder-[#808487] outline-none focus:border-[#0051c3] focus:ring-2 focus:ring-[#0051c3]/10"
+            />
+            <span className="hidden sm:inline-block absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#808487] border border-[#e5e6e8] rounded px-1 py-px font-medium">
+              Ctrl K
+            </span>
+          </div>
+        </div>
+
+        <nav className="px-3 pb-4 flex-1 overflow-y-auto space-y-5">
+          {(() => {
+            const sections: Record<string, NavItem[]> = {};
+            for (const item of visible) {
+              const s = item.section || 'Geral';
+              (sections[s] ||= []).push(item);
+            }
+            return Object.entries(sections).map(([section, items]) => (
+              <div key={section}>
+                <div className="px-3 mb-1 text-[11px] font-medium text-[#808487]">{section}</div>
+                <div className="space-y-0.5">
                   {items.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -166,127 +172,72 @@ export default function AppLayout() {
                         end={item.end}
                         onClick={() => setMenuOpen(false)}
                         className={({ isActive }) =>
-                          `group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                          `flex items-center gap-2.5 px-3 py-2.5 md:py-1.5 rounded-md text-[13px] transition-colors ${
                             isActive
-                              ? 'bg-gradient-to-r from-brand-600/20 to-indigo-600/10 text-brand-300 border border-brand-500/30 shadow-sm shadow-indigo-950/40 font-semibold'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                              ? 'bg-[#f0f1f2] text-[#1d1f20] font-medium'
+                              : 'text-[#313335] hover:bg-[#f6f7f8]'
                           }`
                         }
                       >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-4 h-4 transition-transform group-hover:scale-110" />
-                          <span>{item.label}</span>
-                        </div>
-                        <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-60 transition-opacity" />
+                        <Icon className="w-4 h-4 text-[#4c4f52] stroke-[1.75]" />
+                        <span>{item.label}</span>
                       </NavLink>
                     );
                   })}
                 </div>
-              ));
-            })()}
-          </nav>
-        </div>
-
-        {/* User Footer Profile */}
-        <div className="p-4 border-t border-white/[0.06] bg-[#090b10]/60 space-y-3">
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-800 to-slate-700 border border-white/10 flex items-center justify-center font-bold text-sm text-slate-200 flex-shrink-0">
-                {(user || 'U').charAt(0).toUpperCase()}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-white truncate">{user || 'Usuário'}</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${roleStyle.bg} ${roleStyle.text} ${roleStyle.border}`}
-                  >
-                    <Shield className="w-2.5 h-2.5" />
-                    {roleLabel(role)}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                logout();
-                navigate('/login');
-              }}
-              className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-              title="Desconectar do painel"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+            ));
+          })()}
+        </nav>
       </aside>
 
-      {/* Backdrop for Mobile */}
       {menuOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-30 bg-black/70 backdrop-blur-sm transition-opacity"
-          onClick={() => setMenuOpen(false)}
-        />
+        <div className="md:hidden fixed inset-0 z-30 bg-[#1d1f20]/30" onClick={() => setMenuOpen(false)} />
       )}
 
-      {/* Main Content Area */}
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Top Header Bar */}
-        <header className="h-16 border-b border-white/[0.06] px-4 md:px-8 flex items-center justify-between sticky top-0 z-20 bg-[#08090d]/80 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-20 px-4 md:px-8 flex items-center justify-between bg-[#f6f7f8]/95 backdrop-blur-sm border-b border-transparent md:border-none pt-[env(safe-area-inset-top)]">
+          <div className="h-12 flex items-center gap-3 min-w-0">
             <button
-              className="md:hidden text-slate-400 hover:text-white p-2 rounded-xl bg-white/[0.03] border border-white/[0.08]"
+              className="md:hidden text-[#4c4f52] p-2 -ml-1 rounded-md hover:bg-white border border-transparent hover:border-[#e5e6e8]"
               onClick={() => setMenuOpen(true)}
+              aria-label="Abrir menu"
             >
               <Menu className="w-5 h-5" />
             </button>
-
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-slate-400 hidden sm:inline">Painel</span>
-              <span className="text-slate-600 hidden sm:inline">/</span>
-              <div className="flex items-center gap-2 font-semibold text-slate-100">
-                {currentItem && <currentItem.icon className="w-4 h-4 text-brand-400" />}
-                <span>{currentItem?.label || 'Visão Geral'}</span>
-              </div>
+            <div className="sm:hidden text-[14px] font-medium text-[#1d1f20] truncate">
+              {currentItem?.label || 'Página inicial'}
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5 text-[13px] text-[#808487]">
+              <span>Conta</span>
+              <span>/</span>
+              <span className="text-[#1d1f20] font-medium">{currentItem?.label || 'Página inicial'}</span>
             </div>
           </div>
 
-          {/* Quick Metrics & Actions Bar */}
-          <div className="flex items-center gap-3">
-            {/* Interactive Server Switcher Dropdown */}
+          <div className="flex items-center gap-2">
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setServerDropdownOpen(!serverDropdownOpen)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-brand-950/40 hover:bg-brand-900/40 border border-brand-500/30 hover:border-brand-500/50 text-xs font-medium text-brand-200 transition-all shadow-sm"
-                title="Trocar Servidor / Ambiente"
+                className="inline-flex items-center gap-2 h-9 sm:h-8 px-2.5 rounded-md bg-white border border-[#c5c6c8] text-[12px] font-medium text-[#313335] hover:bg-[#f6f7f8]"
               >
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 {activeServer?.type === 'ssh' ? (
-                  <Globe className="w-3.5 h-3.5 text-indigo-400" />
+                  <Globe className="w-3.5 h-3.5 text-[#0051c3]" />
                 ) : activeServer?.type === 'local' ? (
-                  <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                  <Cpu className="w-3.5 h-3.5 text-[#0051c3]" />
                 ) : (
-                  <Server className="w-3.5 h-3.5 text-brand-400" />
+                  <Server className="w-3.5 h-3.5 text-[#0051c3]" />
                 )}
-                <span className="max-w-[130px] sm:max-w-[180px] truncate font-semibold">
-                  {activeServer?.name || 'Servidor Local'}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <span className="max-w-[88px] sm:max-w-[140px] truncate">{activeServer?.name || 'Servidor local'}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-[#808487]" />
               </button>
 
-              {/* Server Switcher Dropdown Menu */}
               {serverDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-white/10 bg-[#0c0f18]/95 backdrop-blur-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-3 py-2 border-b border-white/[0.06] mb-1">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      Servidores Conectados
-                    </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">
-                      Clique para alternar o servidor de execução
-                    </div>
+                <div className="absolute right-0 left-auto mt-1.5 w-[min(18rem,calc(100vw-2rem))] rounded-md border border-[#e5e6e8] bg-white shadow-lg p-1.5 z-50">
+                  <div className="px-2.5 py-2 border-b border-[#f0f1f2] mb-1">
+                    <div className="text-[11px] font-medium text-[#808487]">Servidores conectados</div>
                   </div>
-
-                  <div className="max-h-60 overflow-y-auto space-y-1">
+                  <div className="max-h-60 overflow-y-auto">
                     {servers.map((s) => {
                       const isCurr = s.id === activeServer?.id;
                       return (
@@ -296,93 +247,72 @@ export default function AppLayout() {
                             setActiveServer(s.id);
                             setServerDropdownOpen(false);
                           }}
-                          className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-all ${
-                            isCurr
-                              ? 'bg-brand-600/20 border border-brand-500/30 text-white font-semibold'
-                              : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
+                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-left text-[12px] ${
+                            isCurr ? 'bg-[#f0f1f2] text-[#1d1f20] font-medium' : 'text-[#313335] hover:bg-[#f6f7f8]'
                           }`}
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div
-                              className={`p-1.5 rounded-lg shrink-0 ${
-                                s.type === 'ssh'
-                                  ? 'bg-indigo-500/20 text-indigo-300'
-                                  : s.type === 'local'
-                                  ? 'bg-emerald-500/20 text-emerald-300'
-                                  : 'bg-brand-500/20 text-brand-300'
-                              }`}
-                            >
-                              {s.type === 'ssh' ? (
-                                <Globe className="w-3.5 h-3.5" />
-                              ) : s.type === 'local' ? (
-                                <Cpu className="w-3.5 h-3.5" />
-                              ) : (
-                                <Server className="w-3.5 h-3.5" />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="truncate font-medium">{s.name}</div>
-                              <div className="text-[10px] text-slate-400 truncate font-mono">
-                                {s.type === 'ssh'
-                                  ? `${s.username}@${s.host}`
-                                  : s.type === 'wsl'
-                                  ? `WSL · ${s.wslDistro || 'Ubuntu'}`
-                                  : 'Linux Nativo'}
-                              </div>
+                          <div className="min-w-0">
+                            <div className="truncate">{s.name}</div>
+                            <div className="text-[11px] text-[#808487] truncate font-mono">
+                              {s.type === 'ssh'
+                                ? `${s.username}@${s.host}`
+                                : s.type === 'wsl'
+                                ? `WSL · ${s.wslDistro || 'Ubuntu'}`
+                                : 'Linux nativo'}
                             </div>
                           </div>
-                          {isCurr && <Check className="w-4 h-4 text-emerald-400 shrink-0" />}
+                          {isCurr && <Check className="w-4 h-4 text-[#0051c3] shrink-0" />}
                         </button>
                       );
                     })}
                   </div>
-
-                  <div className="border-t border-white/[0.06] pt-1.5 mt-1">
-                    <NavLink
-                      to="/servers"
-                      onClick={() => setServerDropdownOpen(false)}
-                      className="flex items-center gap-2 w-full p-2 rounded-xl text-xs font-semibold text-brand-300 hover:bg-brand-500/10 transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Adicionar / Gerenciar Servidores</span>
-                    </NavLink>
-                  </div>
+                  <NavLink
+                    to="/servers"
+                    onClick={() => setServerDropdownOpen(false)}
+                    className="flex items-center gap-2 w-full px-2.5 py-2 mt-1 rounded-md text-[12px] font-medium text-[#0051c3] hover:bg-[#f6f7f8]"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Gerenciar servidores
+                  </NavLink>
                 </div>
               )}
             </div>
 
-            {/* Live Status indicator */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Nginx 80 • Proxy Ativo</span>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((open) => !open)}
+                className="w-7 h-7 rounded-full bg-[#0051c3] text-white text-[11px] font-semibold flex items-center justify-center hover:opacity-90"
+                title={user || 'Usuário'}
+              >
+                {(user || 'U').charAt(0).toUpperCase()}
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-1.5 w-52 rounded-md border border-[#e5e6e8] bg-white shadow-lg p-1.5 z-50">
+                  <div className="px-2.5 py-2 border-b border-[#f0f1f2] mb-1">
+                    <div className="text-[13px] font-medium text-[#1d1f20] truncate">{user || 'Usuário'}</div>
+                    <div className="text-[11px] text-[#808487]">{roleLabel(role)}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      logout();
+                      navigate('/login');
+                    }}
+                    className="flex items-center gap-2 w-full px-2.5 py-2 rounded-md text-[12px] text-[#d9211e] hover:bg-[#f6f7f8]"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Sair
+                  </button>
+                </div>
+              )}
             </div>
-
-            {/* Clock Pill */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs font-mono text-slate-400">
-              <Activity className="w-3.5 h-3.5 text-brand-400" />
-              <span>{currentTime || '00:00:00'}</span>
-            </div>
-
-            {/* Hub Apps Direct Shortcut */}
-            <a
-              href="http://localhost/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15] text-xs font-medium text-slate-300 hover:text-white transition-all group"
-              title="Acessar Proxy Nginx Principal (http://localhost/)"
-            >
-              <Globe className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform" />
-              <span className="hidden sm:inline">http://localhost/</span>
-              <span className="sm:hidden">Proxy</span>
-            </a>
           </div>
         </header>
 
-        {/* Dynamic Page Container */}
-        <main className="flex-1 p-4 md:p-8 overflow-auto bg-radial-fade">
-          <div className="max-w-7xl mx-auto w-full">
-            <Outlet />
-          </div>
+        <main className="flex-1 px-4 md:px-8 pb-[max(2rem,env(safe-area-inset-bottom))] overflow-auto">
+          <div className="max-w-[1120px] mx-auto w-full">{<Outlet />}</div>
         </main>
       </div>
     </div>

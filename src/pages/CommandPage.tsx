@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { TerminalSquare, Play, Loader2, Clock, CheckCircle2, XCircle, Copy, Check, Sparkles, FolderOpen, Zap } from 'lucide-react';
+import { Play, Loader2, Clock, CheckCircle2, XCircle, Copy, Check, FolderOpen, Zap } from 'lucide-react';
 import api from '../lib/api';
 
 const PRESETS = [
@@ -67,15 +67,15 @@ export default function CommandPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/[0.06]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
+          <h1 className="text-[22px] font-semibold tracking-tight text-[#1d1f20] flex items-center gap-2.5">
             <span>Executar Comando</span>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/30">
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#f0f1f2] text-[#4c4f52] border border-[#e5e6e8]">
               Direct Shell
             </span>
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-[#4c4f52] mt-1">
             Execute rotinas shell, scripts de manutenção e diagnósticos diretamente no ambiente WSL
           </p>
         </div>
@@ -83,8 +83,8 @@ export default function CommandPage() {
 
       {/* Preset Command Strip */}
       <div className="card p-4 space-y-2.5">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          <Zap className="w-3.5 h-3.5 text-brand-400" />
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#808487]">
+          <Zap className="w-3.5 h-3.5 text-[#0051c3]" />
           <span>Comandos Rápidos Recomendados</span>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -93,7 +93,7 @@ export default function CommandPage() {
               type="button"
               key={p.label}
               onClick={() => run(p.cmd)}
-              className="text-xs px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-brand-500/40 text-slate-300 hover:text-white transition-all active:scale-[0.98]"
+              className="text-xs px-3 py-1.5 rounded-md bg-white hover:bg-[#f6f7f8] border border-[#e5e6e8] hover:border-[#c5c6c8] text-[#4c4f52] hover:text-[#1d1f20] transition-colors"
             >
               {p.label}
             </button>
@@ -118,10 +118,10 @@ export default function CommandPage() {
           <div className="space-y-1.5">
             <label className="label">Diretório de Trabalho (CWD)</label>
             <div className="relative">
-              <FolderOpen className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <FolderOpen className="w-4 h-4 text-[#808487] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 className="input pl-10 font-mono text-xs"
-                placeholder="/hub-apps/apache ou /opt"
+                placeholder="/hub-apps/servicos/<projeto> ou /hub-apps/apache/<projeto>"
                 value={cwd}
                 onChange={(e) => setCwd(e.target.value)}
               />
@@ -131,7 +131,7 @@ export default function CommandPage() {
           <div className="space-y-1.5">
             <label className="label">Limite de Tempo (Timeout em segundos)</label>
             <div className="relative">
-              <Clock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Clock className="w-4 h-4 text-[#808487] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="number"
                 min={5}
@@ -167,22 +167,22 @@ export default function CommandPage() {
 
       {/* Execution Results Terminal Box */}
       {result && (
-        <div className="card overflow-hidden border-white/[0.1] shadow-2xl bg-[#0a0c12] animate-fade-in">
+        <div className="card overflow-hidden border-[#e5e6e8] bg-white animate-fade-in">
           {/* Status Header */}
-          <div className="px-5 py-3.5 border-b border-white/[0.08] flex items-center justify-between flex-wrap gap-3 bg-white/[0.02]">
+          <div className="px-5 py-3.5 border-b border-[#e5e6e8] flex items-center justify-between flex-wrap gap-3 bg-[#f6f7f8]">
             <div className="flex items-center gap-3">
               {result.success ? (
-                <span className="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                <span className="badge bg-emerald-50 text-emerald-600 border border-emerald-200">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Código 0 (Sucesso)
                 </span>
               ) : (
-                <span className="badge bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                <span className="badge bg-rose-50 text-rose-600 border border-rose-200">
                   <XCircle className="w-3.5 h-3.5" />
                   Código {result.exitCode} (Erro)
                 </span>
               )}
-              <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
+              <span className="text-xs font-mono text-[#808487] flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {result.executionTimeMs} ms
               </span>
@@ -193,22 +193,22 @@ export default function CommandPage() {
               className="btn-secondary text-xs px-3 py-1.5"
               title="Copiar saída completa"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Copiado!' : 'Copiar Saída'}</span>
             </button>
           </div>
 
           {/* Terminal Output */}
-          <div className="p-5 font-mono text-xs bg-[#06070a] overflow-x-auto space-y-3 leading-relaxed select-text">
-            <div className="text-brand-400 font-semibold">$ {result.command}</div>
+          <div className="p-5 font-mono text-xs bg-white overflow-x-auto space-y-3 leading-relaxed select-text">
+            <div className="text-[#0051c3] font-semibold">$ {result.command}</div>
 
             {result.stdout && (
-              <pre className="text-slate-200 whitespace-pre-wrap break-words">{result.stdout}</pre>
+              <pre className="text-[#313335] whitespace-pre-wrap break-words">{result.stdout}</pre>
             )}
 
             {result.stderr && (
-              <div className="pt-2 border-t border-rose-500/20 text-rose-300 whitespace-pre-wrap break-words">
-                <div className="text-[10px] uppercase font-bold text-rose-400 tracking-wider mb-1">
+              <div className="pt-2 border-t border-rose-200 text-rose-700 whitespace-pre-wrap break-words">
+                <div className="text-[10px] uppercase font-bold text-rose-600 tracking-wider mb-1">
                   STDERR:
                 </div>
                 {result.stderr}
@@ -216,7 +216,7 @@ export default function CommandPage() {
             )}
 
             {!result.stdout && !result.stderr && (
-              <div className="text-slate-500 italic">(O comando não produziu nenhuma saída)</div>
+              <div className="text-[#808487] italic">(O comando não produziu nenhuma saída)</div>
             )}
           </div>
         </div>

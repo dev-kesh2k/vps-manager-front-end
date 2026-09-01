@@ -16,7 +16,6 @@ import {
   Search,
   Save,
   KeyRound,
-  ShieldCheck,
 } from 'lucide-react';
 import api from '../lib/api';
 import { ScreenKey, Role, AccessLevel, ScreenPermission } from '../store/auth';
@@ -54,6 +53,9 @@ const ALL_SCREENS: ScreenKey[] = [
   'appsInstalled',
   'appsInstall',
   'users',
+  'servers',
+  'websites',
+  'aplicacoes',
 ];
 
 function defaultPermsForRole(role: Role): Record<ScreenKey, PermissionState> {
@@ -71,6 +73,8 @@ function defaultPermsForRole(role: Role): Record<ScreenKey, PermissionState> {
       'logs',
       'appsInstalled',
       'appsInstall',
+      'websites',
+      'aplicacoes',
     ];
     full.forEach((s) => (result[s] = 'full'));
   } else {
@@ -116,9 +120,9 @@ function roleLabel(role: Role): string {
 }
 
 function roleBadgeClass(role: Role): string {
-  if (role === 'admin') return 'bg-rose-500/10 text-rose-300 border border-rose-500/30';
-  if (role === 'operator') return 'bg-amber-500/10 text-amber-300 border border-amber-500/30';
-  return 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/30';
+  if (role === 'admin') return 'bg-rose-50 text-rose-700 border border-rose-200';
+  if (role === 'operator') return 'bg-amber-50 text-amber-700 border border-amber-200';
+  return 'bg-blue-50 text-[#0051c3] border border-blue-200';
 }
 
 function formatDate(ts: number): string {
@@ -277,15 +281,15 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/[0.06]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
+          <h1 className="text-[22px] font-semibold tracking-tight text-[#1d1f20] flex items-center gap-2.5">
             <span>Gerenciar Usuários</span>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/30">
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#f0f1f2] text-[#4c4f52] border border-[#e5e6e8]">
               {users.length} Contas
             </span>
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-[#4c4f52] mt-1">
             Controle de acesso granular baseado em funções (RBAC) e contas PAM do Linux
           </p>
         </div>
@@ -303,14 +307,14 @@ export default function UsersPage() {
       </div>
 
       {/* Info Banner */}
-      <div className="card p-4 bg-gradient-to-r from-[#121624] via-[#0f121c] to-[#0c0e15] border-white/[0.08]">
+      <div className="bg-white border border-[#e5e6e8] rounded-lg p-4">
         <div className="flex items-start gap-3.5">
-          <div className="w-9 h-9 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-400 shrink-0">
+          <div className="w-9 h-9 rounded-md bg-[#f0f1f2] border border-[#e5e6e8] flex items-center justify-center text-[#0051c3] shrink-0">
             <KeyRound className="w-4 h-4" />
           </div>
-          <div className="text-xs text-slate-300 leading-relaxed">
-            <div className="font-semibold text-white mb-0.5">Integração Direta com o Sistema Linux</div>
-            Ao criar um usuário neste painel, a conta Linux correspondente é criada no WSL e a credencial é utilizada automaticamente para executar tarefas administrativas com privilégios <code className="text-brand-300 font-mono">sudo</code>.
+          <div className="text-xs text-[#4c4f52] leading-relaxed">
+            <div className="font-semibold text-[#1d1f20] mb-0.5">Integração Direta com o Sistema Linux</div>
+            Ao criar um usuário neste painel, a conta Linux correspondente é criada no WSL e a credencial é utilizada automaticamente para executar tarefas administrativas com privilégios <code className="text-[#0051c3] font-mono">sudo</code>.
           </div>
         </div>
       </div>
@@ -318,31 +322,31 @@ export default function UsersPage() {
       {/* Notifications */}
       {notify && (
         <div
-          className={`p-4 rounded-2xl flex items-center justify-between gap-3 text-xs border backdrop-blur-xl animate-fade-in ${
+          className={`p-4 rounded-lg flex items-center justify-between gap-3 text-xs border animate-fade-in ${
             notify.type === 'ok'
-              ? 'bg-[#0a1f18]/90 border-emerald-500/40 text-emerald-200'
-              : 'bg-[#220d13]/90 border-rose-500/40 text-rose-200'
+              ? 'bg-white border-emerald-200 text-[#1d1f20]'
+              : 'bg-rose-50 border-rose-200 text-[#1d1f20]'
           }`}
         >
           <div className="flex items-center gap-2">
             {notify.type === 'ok' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
             )}
             <span className="font-medium">{notify.text}</span>
           </div>
-          <button onClick={() => setNotify(null)} className="text-slate-400 hover:text-white">
+          <button onClick={() => setNotify(null)} className="text-[#808487] hover:text-[#1d1f20]">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {/* Users List Table */}
-      <div className="card p-6 space-y-4">
+      <div className="card p-4 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#808487]" />
             <input
               className="input pl-10 text-xs"
               placeholder="Buscar usuário..."
@@ -350,25 +354,25 @@ export default function UsersPage() {
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
-          <div className="text-xs text-slate-400 font-mono">
+          <div className="text-xs text-[#808487] font-mono">
             {users.length} usuário(s) cadastrado(s)
           </div>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-slate-400 space-y-2">
-            <Loader2 className="w-6 h-6 animate-spin mx-auto text-brand-400" />
+          <div className="py-16 text-center text-[#808487] space-y-2">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#0051c3]" />
             <div className="text-xs">Carregando usuários...</div>
           </div>
         ) : users.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 space-y-2">
-            <Users className="w-8 h-8 mx-auto text-slate-600" />
-            <div className="text-sm font-semibold text-slate-300">Nenhum usuário cadastrado</div>
+          <div className="py-12 text-center text-[#808487] space-y-2">
+            <Users className="w-8 h-8 mx-auto text-[#c5c6c8]" />
+            <div className="text-sm font-semibold text-[#4c4f52]">Nenhum usuário cadastrado</div>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-white/[0.08]">
-            <table className="w-full text-xs">
-              <thead className="bg-[#0e111a] text-[11px] uppercase tracking-wider text-slate-400 border-b border-white/[0.06]">
+          <div className="overflow-x-auto rounded-xl border border-[#e5e6e8] -mx-1 sm:mx-0">
+            <table className="w-full text-xs min-w-[560px]">
+              <thead className="bg-white text-[11px] uppercase tracking-wider text-[#808487] border-b border-[#e5e6e8]">
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold">Usuário Linux</th>
                   <th className="text-left px-4 py-3 font-semibold">Perfil RBAC</th>
@@ -377,19 +381,19 @@ export default function UsersPage() {
                   <th className="text-right px-4 py-3 font-semibold">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04] bg-[#080a0f]">
+              <tbody className="divide-y divide-[#e5e6e8] bg-white">
                 {filtered.map((u) => {
                   const count = u.permissions.length;
                   return (
-                    <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
+                    <tr key={u.id} className="hover:bg-[#f6f7f8] transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600/20 to-indigo-500/20 border border-brand-500/30 flex items-center justify-center text-xs font-bold text-brand-300 flex-shrink-0">
+                          <div className="w-9 h-9 rounded-md bg-[#f0f1f2] border border-[#e5e6e8] flex items-center justify-center text-xs font-bold text-[#0051c3] flex-shrink-0">
                             {u.username.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-semibold text-white">{u.username}</div>
-                            <div className="text-[11px] text-slate-400">Conta WSL Local</div>
+                            <div className="font-semibold text-[#1d1f20]">{u.username}</div>
+                            <div className="text-[11px] text-[#808487]">Conta WSL Local</div>
                           </div>
                         </div>
                       </td>
@@ -399,18 +403,18 @@ export default function UsersPage() {
                           <span>{roleLabel(u.role)}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-400 hidden md:table-cell font-mono text-[11px]">
+                      <td className="px-4 py-3 text-[#808487] hidden md:table-cell font-mono text-[11px]">
                         {formatDate(u.createdAt)}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="badge bg-white/[0.04] text-slate-300 border border-white/[0.08] font-mono text-[11px]">
+                        <span className="badge bg-[#f6f7f8] text-[#4c4f52] border border-[#e5e6e8] font-mono text-[11px]">
                           {u.role === 'admin' ? 'Total (Todas as Telas)' : `${count} / ${ALL_SCREENS.length} Telas`}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-brand-500/20 text-slate-300 hover:text-brand-300 border border-white/[0.08] transition-colors"
+                            className="p-1.5 rounded-lg bg-[#f6f7f8] hover:bg-blue-50 text-[#4c4f52] hover:text-[#0051c3] border border-[#e5e6e8] transition-colors"
                             onClick={() => openEdit(u)}
                             disabled={submitting || !!deletingId}
                             title="Editar usuário"
@@ -418,7 +422,7 @@ export default function UsersPage() {
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors"
+                            className="p-1.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors"
                             onClick={() => handleDelete(u)}
                             disabled={!!deletingId}
                             title="Remover usuário"
@@ -442,30 +446,30 @@ export default function UsersPage() {
 
       {/* Create / Edit User Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="card w-full max-w-3xl max-h-[92vh] overflow-hidden flex flex-col border-white/[0.12] shadow-2xl bg-[#0c0e15]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-white/[0.02]">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#1d1f20]/40 animate-fade-in">
+          <div className="card w-full max-w-3xl max-h-[92dvh] overflow-hidden flex flex-col border-[#e5e6e8] bg-white rounded-t-2xl sm:rounded-lg pb-[env(safe-area-inset-bottom)]">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#e5e6e8] bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400">
+                <div className="w-10 h-10 rounded-md bg-[#f0f1f2] border border-[#e5e6e8] flex items-center justify-center text-[#0051c3]">
                   {editUser ? <Pencil className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
                 </div>
                 <div>
-                  <h2 className="font-bold text-base text-white">{editUser ? 'Editar Usuário' : 'Novo Usuário Linux'}</h2>
-                  <p className="text-xs text-slate-400">
+                  <h2 className="font-bold text-base text-[#1d1f20]">{editUser ? 'Editar Usuário' : 'Novo Usuário Linux'}</h2>
+                  <p className="text-xs text-[#808487]">
                     {editUser
                       ? 'Atualize funções, permissões de tela e senha do usuário'
                       : 'Crie uma nova conta com acesso autenticado ao sistema'}
                   </p>
                 </div>
               </div>
-              <button className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06]" onClick={closeModal}>
+              <button className="p-1.5 rounded-lg text-[#808487] hover:text-[#1d1f20] hover:bg-[#f6f7f8]" onClick={closeModal}>
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-5 text-xs">
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-xs">
               {formError && (
-                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                   <span>{formError}</span>
                 </div>
@@ -482,7 +486,7 @@ export default function UsersPage() {
                     onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
                   />
                   {editUser && (
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-[#808487]">
                       O login Linux é imutável após a criação.
                     </p>
                   )}
@@ -515,23 +519,23 @@ export default function UsersPage() {
                         onClick={() => setRole(r)}
                         className={`text-left p-4 rounded-xl border transition-all ${
                           selected
-                            ? 'bg-brand-500/15 border-brand-500/50 ring-2 ring-brand-500/20'
-                            : 'bg-white/[0.02] border-white/[0.08] hover:border-white/[0.16]'
+                            ? 'bg-blue-50 border-[#0051c3] ring-1 ring-[#0051c3]/20'
+                            : 'bg-white border-[#e5e6e8] hover:border-[#c5c6c8]'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <Shield
                             className={`w-4 h-4 ${
                               r === 'admin'
-                                ? 'text-rose-400'
+                                ? 'text-rose-600'
                                 : r === 'operator'
-                                ? 'text-amber-400'
-                                : 'text-indigo-400'
+                                ? 'text-amber-600'
+                                : 'text-[#0051c3]'
                             }`}
                           />
-                          <span className="font-bold text-white text-xs">{roleLabel(r)}</span>
+                          <span className="font-bold text-[#1d1f20] text-xs">{roleLabel(r)}</span>
                         </div>
-                        <div className="text-[11px] text-slate-400">
+                        <div className="text-[11px] text-[#808487]">
                           {r === 'admin'
                             ? 'Acesso total e irrestrito'
                             : r === 'operator'
@@ -548,20 +552,20 @@ export default function UsersPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="label mb-0">Permissões Específicas por Módulo</label>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-[#808487]">
                     {form.role === 'admin' ? 'Administradores têm acesso total automático.' : 'Configure o acesso individualmente:'}
                   </span>
                 </div>
 
-                <div className="rounded-xl border border-white/[0.08] overflow-hidden">
-                  <div className="grid grid-cols-[1fr_auto_auto_auto] bg-[#0e111a] text-[10px] uppercase tracking-wider text-slate-400 border-b border-white/[0.06]">
+                <div className="rounded-xl border border-[#e5e6e8] overflow-x-auto">
+                  <div className="grid grid-cols-[1fr_auto_auto_auto] bg-white text-[10px] uppercase tracking-wider text-[#808487] border-b border-[#e5e6e8]">
                     <div className="px-4 py-2.5 font-semibold">Módulo / Tela</div>
                     <div className="px-4 py-2.5 text-center whitespace-nowrap font-semibold">Nenhum</div>
                     <div className="px-4 py-2.5 text-center whitespace-nowrap font-semibold">Leitura</div>
                     <div className="px-4 py-2.5 text-center whitespace-nowrap font-semibold">Total</div>
                   </div>
 
-                  <div className="divide-y divide-white/[0.04] bg-[#080a0f]">
+                  <div className="divide-y divide-[#e5e6e8] bg-white">
                     {(screens.length > 0 ? screens.map((s) => s.key) : ALL_SCREENS).map((key) => {
                       const meta = screenMap[key];
                       const state = form.permissions[key] || 'none';
@@ -572,11 +576,11 @@ export default function UsersPage() {
                           key={key}
                           className={`grid grid-cols-[1fr_auto_auto_auto] items-center ${
                             disabled ? 'opacity-60' : ''
-                          } hover:bg-white/[0.02] transition-colors`}
+                          } hover:bg-[#f6f7f8] transition-colors`}
                         >
                           <div className="px-4 py-2.5">
-                            <div className="font-semibold text-slate-200">{meta?.label || key}</div>
-                            <div className="text-[11px] text-slate-400">{meta?.description}</div>
+                            <div className="font-semibold text-[#313335]">{meta?.label || key}</div>
+                            <div className="text-[11px] text-[#808487]">{meta?.description}</div>
                           </div>
 
                           {cols.map((c) => {
@@ -590,11 +594,11 @@ export default function UsersPage() {
                                   className={`w-8 h-8 rounded-lg border inline-flex items-center justify-center transition-all disabled:cursor-not-allowed ${
                                     selected
                                       ? c === 'none'
-                                        ? 'bg-slate-700/80 border-slate-500 text-white'
+                                        ? 'bg-[#313335] border-[#313335] text-white'
                                         : c === 'read'
-                                        ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300'
-                                        : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                                      : 'border-white/[0.08] bg-white/[0.02] text-slate-500 hover:border-white/[0.2]'
+                                        ? 'bg-blue-50 border-[#0051c3] text-[#0051c3]'
+                                        : 'bg-emerald-50 border-emerald-500 text-emerald-700'
+                                      : 'border-[#e5e6e8] bg-white text-[#808487] hover:border-[#c5c6c8]'
                                   }`}
                                   title={
                                     c === 'none'
@@ -623,7 +627,7 @@ export default function UsersPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-white/[0.08] bg-white/[0.02]">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 px-4 sm:px-6 py-4 border-t border-[#e5e6e8] bg-white">
               <button className="btn-secondary text-xs px-4 py-2" onClick={closeModal} disabled={submitting}>
                 Cancelar
               </button>
