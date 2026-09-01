@@ -30,7 +30,10 @@ export default function LoginPage() {
       });
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Credenciais inválidas. Verifique seu usuário e senha do Linux/WSL.');
+      setError(
+        err.response?.data?.error ||
+          'Credenciais inválidas. Use o usuário/senha do Linux no WSL ou AUTH_USERNAME/AUTH_PASSWORD do .env.'
+      );
     } finally {
       setLoading(false);
     }
@@ -58,7 +61,7 @@ export default function LoginPage() {
               </span>
             </div>
             <p className="text-xs text-[#4c4f52] mt-1.5">
-              Autentique-se com sua conta Linux para gerenciar o servidor
+              Entre com o usuário e a senha do Linux no WSL
             </p>
           </div>
         </div>
