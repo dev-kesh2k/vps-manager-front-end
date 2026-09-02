@@ -89,8 +89,32 @@ export default function AppsInstallPage() {
   const [info, setInfo] = useState<string | null>(null);
 
   const [jobs, setJobs] = useState<InstallJob[]>([]);
-  const jobsInterval = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const jobsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const jobsRef = useRef<InstallJob[]>([]);
+
+  const jobsChanged = (prev: InstallJob[], next: InstallJob[]) => {
+    if (prev.length !== next.length) return true;
+    for (let i = 0; i < next.length; i++) {
+      const a = prev[i];
+      const b = next[i];
+      if (
+        a.jobId !== b.jobId ||
+        a.status !== b.status ||
+        a.output.length !== b.output.length ||
+        a.error !== b.error
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const getJobsPollDelay = () => {
+    if (document.hidden) {
+      return jobsRef.current.some((job) => job.status === 'running') ? 30000 : null;
+    }
+    return jobsRef.current.some((job) => job.status === 'running') ? 2500 : 15000;
+  };
 
   const [expandedApp, setExpandedApp] = useState<string | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -137,8 +161,11 @@ export default function AppsInstallPage() {
           (j.status === 'success' || j.status === 'error') &&
           jobsRef.current.some((p) => p.jobId === j.jobId && p.status === 'running')
       );
+      const prev = jobsRef.current;
       jobsRef.current = next;
-      setJobs(next);
+      if (jobsChanged(prev, next)) {
+        setJobs(next);
+      }
       if (finished) await refreshInstalled();
     } catch {}
   };
@@ -146,9 +173,31 @@ export default function AppsInstallPage() {
   useEffect(() => {
     loadEverything();
     loadJobs();
-    jobsInterval.current = setInterval(loadJobs, 2500);
+
+    let cancelled = false;
+
+    const scheduleJobsPoll = () => {
+      if (cancelled) return;
+      const delay = getJobsPollDelay();
+      if (delay === null) return;
+      jobsTimer.current = setTimeout(async () => {
+        if (!cancelled) await loadJobs();
+        scheduleJobsPoll();
+      }, delay);
+    };
+
+    const onVisibilityChange = () => {
+      if (jobsTimer.current) clearTimeout(jobsTimer.current);
+      scheduleJobsPoll();
+    };
+
+    scheduleJobsPoll();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     return () => {
-      if (jobsInterval.current) clearInterval(jobsInterval.current);
+      cancelled = true;
+      if (jobsTimer.current) clearTimeout(jobsTimer.current);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
 

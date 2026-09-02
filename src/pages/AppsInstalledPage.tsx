@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   PackageCheck,
   RefreshCw,
@@ -24,6 +25,7 @@ import {
   Search,
 } from 'lucide-react';
 import api from '../lib/api';
+import { safeExternalUrl } from '../lib/safe-url';
 
 interface InstalledApp {
   id: string;
@@ -173,8 +175,8 @@ export default function AppsInstalledPage() {
       return null;
     }
 
-    if (isPublicHub && app.publicUrl) return app.publicUrl;
-    if (app.localUrl) return app.localUrl;
+    if (isPublicHub && app.publicUrl) return safeExternalUrl(app.publicUrl);
+    if (app.localUrl) return safeExternalUrl(app.localUrl);
 
     if (!app.defaultPort && !app.webPath) return null;
     const protocol =
@@ -192,7 +194,7 @@ export default function AppsInstalledPage() {
   };
 
   const getNginxPathUrl = (app: InstalledApp): string | null => {
-    if (isPublicHub && app.publicUrl) return app.publicUrl;
+    if (isPublicHub && app.publicUrl) return safeExternalUrl(app.publicUrl);
     if (!app.nginxPath) return null;
     const protocol = isPublicHub ? 'https' : 'http';
     const host = window.location.hostname || 'localhost';
@@ -200,12 +202,12 @@ export default function AppsInstalledPage() {
       app.nginxPath === '/'
         ? '/'
         : `${app.nginxPath.replace(/\/$/, '')}/`;
-    return `${protocol}://${host}${path.startsWith('/') ? path : '/' + path}`;
+    return safeExternalUrl(`${protocol}://${host}${path.startsWith('/') ? path : '/' + path}`);
   };
 
   const getNginxSubdomainUrl = (app: InstalledApp): string | null => {
     if (!app.nginxSubdomain) return null;
-    return `http://${app.nginxSubdomain}/`;
+    return safeExternalUrl(`http://${app.nginxSubdomain}/`);
   };
 
   const copyToClipboard = (text: string, id: string, e?: React.MouseEvent) => {
@@ -356,10 +358,10 @@ export default function AppsInstalledPage() {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Atualizar</span>
           </button>
-          <a href="/apps/install" className="btn-primary text-xs h-8">
+          <Link to="/apps/install" className="btn-primary text-xs h-8">
             <PackageCheck className="w-4 h-4" />
             <span>Catálogo de apps</span>
-          </a>
+          </Link>
         </div>
       </div>
 

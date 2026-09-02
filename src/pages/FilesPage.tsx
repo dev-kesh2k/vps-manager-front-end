@@ -28,7 +28,6 @@ const QUICK_PATHS = [
 export default function FilesPage() {
   const [path, setPath] = useState('/');
   const [files, setFiles] = useState<FileEntry[]>([]);
-  const [history, setHistory] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewer, setViewer] = useState<{ path: string; content: string; truncated: boolean; totalLines: number } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -40,7 +39,6 @@ export default function FilesPage() {
       const { data } = await api.get('/files', { params: { path: finalPath } });
       setFiles(data.files || []);
       if (target !== undefined) {
-        setHistory((h) => [...h, target]);
         setPath(target);
       }
     } finally {
@@ -55,7 +53,6 @@ export default function FilesPage() {
   const goBack = () => {
     const next = path === '/' ? null : path.split('/').slice(0, -1).join('/') || '/';
     if (next === null) return;
-    setHistory((h) => h.slice(0, -1));
     setPath(next);
     load(next);
   };

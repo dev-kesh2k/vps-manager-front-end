@@ -3,6 +3,7 @@ import { Maximize2, Minimize2, RefreshCcw, Wifi, WifiOff, Server } from 'lucide-
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
+import 'xterm/css/xterm.css';
 import { useAuthStore } from '../store/auth';
 
 type WsStatus = 'connecting' | 'open' | 'closed' | 'error';
@@ -50,7 +51,7 @@ export default function TerminalPage() {
       cursorBlink: true,
       convertEol: true,
       allowProposedApi: true,
-      scrollback: 10000,
+      scrollback: 2500,
     });
     termRef.current = term;
 

@@ -5,6 +5,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Ambiente
+.env
+.env.local
 
 # Cache do Vite
 .vite/

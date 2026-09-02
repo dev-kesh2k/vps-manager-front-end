@@ -29,6 +29,7 @@ interface AuthState {
   id: string | null;
   role: Role | null;
   permissions: ScreenPermission[];
+  permissionsLoaded: boolean;
   login: (payload: {
     token: string;
     user: string;
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   id: null,
   role: null,
   permissions: [],
+  permissionsLoaded: false,
   isAuthenticated: false,
   login: ({ token, user, id, role, permissions }) => {
     localStorage.setItem('auth_token', token);
@@ -70,7 +72,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       role,
       permissions,
       isAuthenticated: true,
+      permissionsLoaded: false,
     });
+    get()
+      .refreshMe()
+      .catch(() => {})
+      .finally(() => set({ permissionsLoaded: true }));
   },
   logout: () => {
     localStorage.removeItem('auth_token');
@@ -85,6 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       role: null,
       permissions: [],
       isAuthenticated: false,
+      permissionsLoaded: false,
     });
   },
   hydrate: () => {
@@ -103,19 +111,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           role,
           permissions,
           isAuthenticated: true,
+          permissionsLoaded: false,
         });
-        // Atualiza permissões em background a partir do /me
-        get().refreshMe().catch(() => {});
+        get()
+          .refreshMe()
+          .catch(() => {})
+          .finally(() => set({ permissionsLoaded: true }));
       }
     } catch {}
   },
   canAccess: (screen, level = 'read') => {
-    const { role, permissions, isAuthenticated } = get();
+    const { role, permissions, isAuthenticated, permissionsLoaded } = get();
     if (role === 'admin') return true;
-    // Fallback seguro durante a carga inicial (hydrate): role ainda null enquanto
-    // o refreshMe() roda em background (login antigo sem localStorage role/permissions).
-    // Permitimos temporariamente read access apenas, se usuário logado.
-    if (role === null && isAuthenticated) return level === 'read';
+    if (isAuthenticated && !permissionsLoaded) return false;
+    if (role === null && isAuthenticated) return false;
     const p = permissions.find((x) => x.screen === screen);
     if (!p) return false;
     if (level === 'full') return p.level === 'full';
@@ -136,6 +145,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         id: String(data.id || get().id || null),
         user: String(data.user || get().user || null),
       });
-    } catch {}
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) get().logout();
+    }
   },
 }));

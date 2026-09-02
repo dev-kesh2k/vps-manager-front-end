@@ -7,17 +7,11 @@ import {
   XCircle,
   AlertTriangle,
   Globe,
-  Terminal,
   Cpu,
-  Key,
-  Lock,
   Trash2,
   Edit2,
-  ExternalLink,
   ShieldCheck,
   Zap,
-  Clock,
-  HardDrive,
   Info,
 } from 'lucide-react';
 import { useServerStore, PublicServerNode, ServerType, TestResult } from '../store/server';
@@ -38,7 +32,8 @@ export default function ServersPage() {
   } = useServerStore();
 
   const role = useAuthStore((s) => s.role);
-  const canManage = role === 'admin' || useAuthStore((s) => s.canAccess('servers', 'full'));
+  const canManageServers = useAuthStore((s) => s.canAccess('servers', 'full'));
+  const canManage = role === 'admin' || canManageServers;
 
   // Modals & UI state
   const [modalOpen, setModalOpen] = useState(false);

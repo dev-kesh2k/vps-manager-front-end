@@ -1,21 +1,34 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore, ScreenKey } from './store/auth';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import TerminalPage from './pages/TerminalPage';
-import ServicesPage from './pages/ServicesPage';
-import FilesPage from './pages/FilesPage';
-import LogsPage from './pages/LogsPage';
-import CommandPage from './pages/CommandPage';
-import UsersPage from './pages/UsersPage';
-import ServersPage from './pages/ServersPage';
-import AppsInstalledPage from './pages/AppsInstalledPage';
-import AppsInstallPage from './pages/AppsInstallPage';
-import WebsitesPage from './pages/WebsitesPage';
-import AplicacoesPage from './pages/AplicacoesPage';
 import AppLayout from './layouts/AppLayout';
 import { Lock, ShieldAlert } from 'lucide-react';
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const TerminalPage = lazy(() => import('./pages/TerminalPage'));
+const ServicesPage = lazy(() => import('./pages/ServicesPage'));
+const FilesPage = lazy(() => import('./pages/FilesPage'));
+const LogsPage = lazy(() => import('./pages/LogsPage'));
+const CommandPage = lazy(() => import('./pages/CommandPage'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const ServersPage = lazy(() => import('./pages/ServersPage'));
+const AppsInstalledPage = lazy(() => import('./pages/AppsInstalledPage'));
+const AppsInstallPage = lazy(() => import('./pages/AppsInstallPage'));
+const WebsitesPage = lazy(() => import('./pages/WebsitesPage'));
+const AplicacoesPage = lazy(() => import('./pages/AplicacoesPage'));
+
+function PageLoader() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center">
+      <div className="text-sm text-[#808487]">Carregando…</div>
+    </div>
+  );
+}
+
+function LazyPage({ children }: { children: JSX.Element }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -97,7 +110,9 @@ export default function App() {
           path="/"
           element={
             <RequireScreen screen="dashboard">
-              <DashboardPage />
+              <LazyPage>
+                <DashboardPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -105,7 +120,9 @@ export default function App() {
           path="/terminal"
           element={
             <RequireScreen screen="terminal" level="full">
-              <TerminalPage />
+              <LazyPage>
+                <TerminalPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -113,7 +130,9 @@ export default function App() {
           path="/command"
           element={
             <RequireScreen screen="command" level="full">
-              <CommandPage />
+              <LazyPage>
+                <CommandPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -121,7 +140,9 @@ export default function App() {
           path="/services"
           element={
             <RequireScreen screen="services">
-              <ServicesPage />
+              <LazyPage>
+                <ServicesPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -129,7 +150,9 @@ export default function App() {
           path="/files"
           element={
             <RequireScreen screen="files">
-              <FilesPage />
+              <LazyPage>
+                <FilesPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -137,7 +160,9 @@ export default function App() {
           path="/logs"
           element={
             <RequireScreen screen="logs">
-              <LogsPage />
+              <LazyPage>
+                <LogsPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -145,7 +170,9 @@ export default function App() {
           path="/apps/installed"
           element={
             <RequireScreen screen="appsInstalled">
-              <AppsInstalledPage />
+              <LazyPage>
+                <AppsInstalledPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -153,7 +180,9 @@ export default function App() {
           path="/apps/install"
           element={
             <RequireScreen screen="appsInstall">
-              <AppsInstallPage />
+              <LazyPage>
+                <AppsInstallPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -161,7 +190,9 @@ export default function App() {
           path="/aplicacoes"
           element={
             <RequireScreen screen="aplicacoes">
-              <AplicacoesPage />
+              <LazyPage>
+                <AplicacoesPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -169,7 +200,9 @@ export default function App() {
           path="/websites"
           element={
             <RequireScreen screen="websites">
-              <WebsitesPage />
+              <LazyPage>
+                <WebsitesPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -177,7 +210,9 @@ export default function App() {
           path="/users"
           element={
             <RequireScreen screen="users" level="full">
-              <UsersPage />
+              <LazyPage>
+                <UsersPage />
+              </LazyPage>
             </RequireScreen>
           }
         />
@@ -185,7 +220,9 @@ export default function App() {
           path="/servers"
           element={
             <RequireScreen screen="servers">
-              <ServersPage />
+              <LazyPage>
+                <ServersPage />
+              </LazyPage>
             </RequireScreen>
           }
         />

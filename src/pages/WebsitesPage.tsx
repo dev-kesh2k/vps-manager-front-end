@@ -12,6 +12,7 @@ import {
   Link2,
 } from 'lucide-react';
 import api from '../lib/api';
+import { safeExternalUrl } from '../lib/safe-url';
 import { useAuthStore } from '../store/auth';
 
 interface Website {
@@ -210,14 +211,11 @@ export default function WebsitesPage() {
           {filtered.map((w) => {
             const host = hostnameOf(w.url);
             const favicon = faviconOf(w.url);
-            return (
-              <a
-                key={w.id}
-                href={w.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="card p-5 flex flex-col gap-3 hover:border-[#c5c6c8] transition-colors group"
-              >
+            const href = safeExternalUrl(w.url);
+            const cardClass =
+              'card p-5 flex flex-col gap-3 hover:border-[#c5c6c8] transition-colors group';
+            const inner = (
+              <>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-md bg-[#f0f1f2] border border-[#e5e6e8] flex items-center justify-center overflow-hidden shrink-0">
@@ -267,7 +265,23 @@ export default function WebsitesPage() {
                     </button>
                   </div>
                 )}
+              </>
+            );
+
+            return href ? (
+              <a
+                key={w.id}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cardClass}
+              >
+                {inner}
               </a>
+            ) : (
+              <div key={w.id} className={cardClass}>
+                {inner}
+              </div>
             );
           })}
         </div>
