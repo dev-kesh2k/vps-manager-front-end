@@ -47,6 +47,8 @@ interface InstalledApp {
   connectionString?: string;
   nginxPath?: string;
   nginxSubdomain?: string;
+  publicUrl?: string;
+  localUrl?: string;
 }
 
 interface Category {
@@ -58,11 +60,13 @@ interface Category {
 interface InstalledResponse {
   apps: InstalledApp[];
   categories: Category[];
+  publicOrigin?: string;
 }
 
 export default function AppsInstalledPage() {
   const [apps, setApps] = useState<InstalledApp[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [publicOrigin, setPublicOrigin] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -104,6 +108,7 @@ export default function AppsInstalledPage() {
       const { data } = await api.get<InstalledResponse>('/apps/installed');
       setApps(data.apps || []);
       setCategories(data.categories || []);
+      setPublicOrigin(data.publicOrigin || '');
     } finally {
       setLoading(false);
     }
@@ -146,6 +151,15 @@ export default function AppsInstalledPage() {
   const runningCount = useMemo(() => installedApps.filter((a) => a.running === true).length, [installedApps]);
   const stoppedCount = useMemo(() => installedApps.filter((a) => a.running === false).length, [installedApps]);
 
+  const isPublicHub = useMemo(() => {
+    if (!publicOrigin) return false;
+    try {
+      return window.location.hostname === new URL(publicOrigin).hostname;
+    } catch {
+      return false;
+    }
+  }, [publicOrigin]);
+
   const getAppUrl = (app: InstalledApp): string | null => {
     if (
       app.hasWebUi === false ||
@@ -158,6 +172,10 @@ export default function AppsInstalledPage() {
     ) {
       return null;
     }
+
+    if (isPublicHub && app.publicUrl) return app.publicUrl;
+    if (app.localUrl) return app.localUrl;
+
     if (!app.defaultPort && !app.webPath) return null;
     const protocol =
       app.protocol ||
@@ -174,10 +192,15 @@ export default function AppsInstalledPage() {
   };
 
   const getNginxPathUrl = (app: InstalledApp): string | null => {
+    if (isPublicHub && app.publicUrl) return app.publicUrl;
     if (!app.nginxPath) return null;
+    const protocol = isPublicHub ? 'https' : 'http';
     const host = window.location.hostname || 'localhost';
-    const path = app.nginxPath;
-    return `http://${host}${path.startsWith('/') ? path : '/' + path}`;
+    const path =
+      app.nginxPath === '/'
+        ? '/'
+        : `${app.nginxPath.replace(/\/$/, '')}/`;
+    return `${protocol}://${host}${path.startsWith('/') ? path : '/' + path}`;
   };
 
   const getNginxSubdomainUrl = (app: InstalledApp): string | null => {
@@ -635,7 +658,7 @@ export default function AppsInstalledPage() {
                             className="flex-1 btn-primary text-xs py-2 px-3 justify-center"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
-                            <span>Acessar Web (Porta {app.defaultPort})</span>
+                            <span>{isPublicHub && app.publicUrl ? 'Acessar Web' : `Acessar Web (Porta ${app.defaultPort})`}</span>
                           </a>
                           <button
                             onClick={(e) => copyToClipboard(appUrl, app.id, e)}
@@ -692,7 +715,11 @@ export default function AppsInstalledPage() {
                           >
                             <Globe className="w-3.5 h-3.5" />
                             <span className="truncate">
-                              Nginx: {app.nginxPath ? `http://localhost${app.nginxPath}` : `http://${app.nginxSubdomain}`}
+                              {isPublicHub && app.publicUrl
+                                ? `Público: ${app.publicUrl}`
+                                : app.nginxPath
+                                  ? `Proxy: http://localhost${app.nginxPath}`
+                                  : `http://${app.nginxSubdomain}`}
                             </span>
                           </a>
                           <button
