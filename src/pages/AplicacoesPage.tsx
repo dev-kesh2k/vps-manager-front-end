@@ -39,6 +39,7 @@ interface HubApplication {
   cloudflareMessage?: string;
   status: 'deploying' | 'active' | 'error';
   lastError?: string;
+  databaseName?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -140,24 +141,37 @@ export default function AplicacoesPage() {
   const [frontendFile, setFrontendFile] = useState<File | null>(null);
   const [backendFile, setBackendFile] = useState<File | null>(null);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
+  const load = async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const [appsRes, portsRes] = await Promise.all([api.get('/aplicacoes'), api.get('/aplicacoes/ports')]);
       setItems(appsRes.data.applications || []);
       setPorts(portsRes.data.ports || []);
       setPools(portsRes.data.pools || null);
     } catch (e: any) {
-      setError(e?.response?.data?.error || 'Não foi possível carregar as aplicações.');
+      if (!opts?.silent) {
+        setError(e?.response?.data?.error || 'Não foi possível carregar as aplicações.');
+      }
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     load();
   }, []);
+
+  const deploying = items.some((a) => a.status === 'deploying');
+  useEffect(() => {
+    if (!deploying) return;
+    const timer = window.setInterval(() => {
+      load({ silent: true });
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [deploying]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -207,14 +221,20 @@ export default function AplicacoesPage() {
       if (frontendFile) data.append('frontend', frontendFile);
       if (backendFile) data.append('backend', backendFile);
       if (patchId) {
-        await api.post(`/aplicacoes/${patchId}/upload`, data, { timeout: 300000 });
+        await api.post(`/aplicacoes/${patchId}/upload`, data, { timeout: 180000 });
       } else {
-        await api.post('/aplicacoes', data, { timeout: 300000 });
+        await api.post('/aplicacoes', data, { timeout: 180000 });
       }
       setModalOpen(false);
-      await load();
+      await load({ silent: true });
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Não foi possível publicar a aplicação.');
+      const status = err?.response?.status;
+      setError(
+        err?.response?.data?.error ||
+          (status === 502 || status === 504
+            ? 'O proxy cortou a resposta, mas a publicação pode ter seguido no servidor. Atualize a lista em alguns segundos.'
+            : 'Não foi possível publicar a aplicação.')
+      );
     } finally {
       setSaving(false);
     }
@@ -238,10 +258,16 @@ export default function AplicacoesPage() {
     setBusyId(id);
     setError(null);
     try {
-      await api.post(`/aplicacoes/${id}/redeploy`, {}, { timeout: 180000 });
-      await load();
+      await api.post(`/aplicacoes/${id}/redeploy`, {}, { timeout: 30000 });
+      await load({ silent: true });
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Não foi possível reconfigurar o Nginx.');
+      const status = err?.response?.status;
+      setError(
+        err?.response?.data?.error ||
+          (status === 502 || status === 504
+            ? 'O proxy cortou a resposta. Se o status ficou em Publicando, aguarde — o servidor continua o trabalho.'
+            : 'Não foi possível reconfigurar o Nginx.')
+      );
     } finally {
       setBusyId(null);
     }
@@ -398,6 +424,11 @@ export default function AplicacoesPage() {
                     Backend · :{app.backendPort}
                   </span>
                 )}
+                {app.databaseName && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f0f4fb] text-[#0051c3] border border-[#d6e4f7]">
+                    Postgres · {app.databaseName}
+                  </span>
+                )}
                 {app.publicPort && (
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f0f4fb] text-[#0051c3] border border-[#d6e4f7]">
                     Nginx · :{app.publicPort}
@@ -476,6 +507,12 @@ export default function AplicacoesPage() {
                 </span>
               </div>
 
+              {app.status === 'deploying' && (
+                <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-2">
+                  Publicando no Docker e no Nginx. Isso pode levar alguns minutos — o status atualiza sozinho.
+                </p>
+              )}
+
               {app.lastError && app.status === 'error' && (
                 <pre className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-md p-2 whitespace-pre-wrap">
                   {app.lastError}
@@ -488,7 +525,7 @@ export default function AplicacoesPage() {
                     type="button"
                     className="btn-ghost text-xs"
                     onClick={() => openPatch(app)}
-                    disabled={busyId === app.id}
+                    disabled={busyId === app.id || app.status === 'deploying'}
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Upload
@@ -497,16 +534,16 @@ export default function AplicacoesPage() {
                     type="button"
                     className="btn-ghost text-xs"
                     onClick={() => onRedeploy(app.id)}
-                    disabled={busyId === app.id}
+                    disabled={busyId === app.id || app.status === 'deploying'}
                   >
-                    {busyId === app.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                    {busyId === app.id || app.status === 'deploying' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                     Nginx
                   </button>
                   <button
                     type="button"
                     className="btn-ghost text-xs"
                     onClick={() => onCloudflare(app.id)}
-                    disabled={busyId === app.id}
+                    disabled={busyId === app.id || app.status === 'deploying'}
                   >
                     {busyId === app.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
                     Cloudflare
@@ -661,7 +698,8 @@ export default function AplicacoesPage() {
 
               <p className="text-[11px] text-[#808487]">
                 Envie pelo menos um dos dois. Frontend Vite (com src/main.tsx) é compilado automaticamente; ou envie só a
-                pasta dist. O backend sobe em Docker com porta automática.
+                pasta dist. O backend sobe em Docker. Se o projeto precisar de banco e o Postgres não estiver no ar, o
+                Hub cria o container, ajusta o .env e aplica as migrations.
               </p>
 
               <div className="flex items-center justify-end gap-2 pt-2">
