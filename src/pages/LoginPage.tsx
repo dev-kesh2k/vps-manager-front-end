@@ -32,7 +32,7 @@ export default function LoginPage() {
     } catch (err: any) {
       setError(
         err.response?.data?.error ||
-          'Credenciais inválidas. Use o usuário/senha do Linux no WSL ou AUTH_USERNAME/AUTH_PASSWORD do .env.'
+          'Credenciais inválidas. Use o root do Hub (.env) ou um usuário cadastrado em Usuários.'
       );
     } finally {
       setLoading(false);
@@ -61,7 +61,7 @@ export default function LoginPage() {
               </span>
             </div>
             <p className="text-xs text-[#4c4f52] mt-1.5">
-              Entre com o usuário e a senha do Linux no WSL
+              Root do Hub (.env) ou usuário cadastrado em Usuários
             </p>
           </div>
         </div>
@@ -71,13 +71,13 @@ export default function LoginPage() {
           <form onSubmit={onSubmit} className="space-y-4">
             {/* Username */}
             <div className="space-y-1.5">
-              <label className="label">Usuário do Sistema</label>
+              <label className="label">Usuário</label>
               <div className="relative">
                 <User className="w-4 h-4 text-[#808487] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   className="input pl-10"
-                  placeholder="ex: jefer, ubuntu, root"
+                  placeholder="ex: jsantana"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoFocus
@@ -89,7 +89,7 @@ export default function LoginPage() {
             {/* Password */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="label">Senha do Linux (sudo)</label>
+                <label className="label">Senha</label>
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-[#808487] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />

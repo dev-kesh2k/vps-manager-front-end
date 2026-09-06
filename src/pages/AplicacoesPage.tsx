@@ -15,6 +15,8 @@ import {
   FolderOpen,
   ShieldCheck,
   ShieldAlert,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import api from '../lib/api';
 import { useAuthStore } from '../store/auth';
@@ -40,6 +42,17 @@ interface HubApplication {
   status: 'deploying' | 'active' | 'error';
   lastError?: string;
   databaseName?: string;
+  replicas?: number;
+  memoryLimitMb?: number;
+  cpuLimit?: number;
+  autoScaleEnabled?: boolean;
+  autoScaleMin?: number;
+  autoScaleMax?: number;
+  autoScaleCpuUp?: number;
+  autoScaleMemUp?: number;
+  autoScaleCpuDown?: number;
+  autoScaleMemDown?: number;
+  lastScaleAt?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -130,6 +143,7 @@ export default function AplicacoesPage() {
   const [pools, setPools] = useState<PortPools | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [portsOpen, setPortsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -137,9 +151,29 @@ export default function AplicacoesPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [patchId, setPatchId] = useState<string | null>(null);
   const [focusSide, setFocusSide] = useState<'frontend' | 'backend' | 'both'>('both');
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    replicas: 1,
+    memoryLimitMb: 512,
+    cpuLimit: '',
+  });
   const [frontendFile, setFrontendFile] = useState<File | null>(null);
   const [backendFile, setBackendFile] = useState<File | null>(null);
+  const [scaleApp, setScaleApp] = useState<HubApplication | null>(null);
+  const [scaleForm, setScaleForm] = useState({
+    replicas: 1,
+    memoryLimitMb: 512,
+    cpuLimit: '',
+    autoScaleEnabled: false,
+    autoScaleMin: 1,
+    autoScaleMax: 3,
+    autoScaleCpuUp: 70,
+    autoScaleMemUp: 80,
+    autoScaleCpuDown: 25,
+    autoScaleMemDown: 40,
+  });
+  const [scaling, setScaling] = useState(false);
 
   const load = async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) {
@@ -187,7 +221,7 @@ export default function AplicacoesPage() {
   const openCreate = (side: 'frontend' | 'backend' | 'both' = 'both') => {
     setPatchId(null);
     setFocusSide(side);
-    setForm({ name: '', description: '' });
+    setForm({ name: '', description: '', replicas: 1, memoryLimitMb: 512, cpuLimit: '' });
     setFrontendFile(null);
     setBackendFile(null);
     setError(null);
@@ -197,11 +231,34 @@ export default function AplicacoesPage() {
   const openPatch = (app: HubApplication) => {
     setPatchId(app.id);
     setFocusSide('both');
-    setForm({ name: app.name, description: app.description || '' });
+    setForm({
+      name: app.name,
+      description: app.description || '',
+      replicas: app.replicas || 1,
+      memoryLimitMb: app.memoryLimitMb || 512,
+      cpuLimit: app.cpuLimit ? String(app.cpuLimit) : '',
+    });
     setFrontendFile(null);
     setBackendFile(null);
     setError(null);
     setModalOpen(true);
+  };
+
+  const openScale = (app: HubApplication) => {
+    setScaleApp(app);
+    setScaleForm({
+      replicas: app.replicas || 1,
+      memoryLimitMb: app.memoryLimitMb || 512,
+      cpuLimit: app.cpuLimit ? String(app.cpuLimit) : '',
+      autoScaleEnabled: !!app.autoScaleEnabled,
+      autoScaleMin: app.autoScaleMin || 1,
+      autoScaleMax: app.autoScaleMax || 3,
+      autoScaleCpuUp: app.autoScaleCpuUp || 70,
+      autoScaleMemUp: app.autoScaleMemUp || 80,
+      autoScaleCpuDown: app.autoScaleCpuDown || 25,
+      autoScaleMemDown: app.autoScaleMemDown || 40,
+    });
+    setError(null);
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -218,6 +275,9 @@ export default function AplicacoesPage() {
         data.append('name', form.name);
         data.append('description', form.description);
       }
+      data.append('replicas', String(form.replicas));
+      data.append('memoryLimitMb', String(form.memoryLimitMb));
+      if (form.cpuLimit.trim()) data.append('cpuLimit', form.cpuLimit.trim());
       if (frontendFile) data.append('frontend', frontendFile);
       if (backendFile) data.append('backend', backendFile);
       if (patchId) {
@@ -286,6 +346,37 @@ export default function AplicacoesPage() {
     }
   };
 
+  const onScaleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!scaleApp) return;
+    setScaling(true);
+    setError(null);
+    try {
+      await api.post(
+        `/aplicacoes/${scaleApp.id}/scale`,
+        {
+          replicas: scaleForm.replicas,
+          memoryLimitMb: scaleForm.memoryLimitMb,
+          cpuLimit: scaleForm.cpuLimit.trim() ? Number(scaleForm.cpuLimit) : null,
+          autoScaleEnabled: scaleForm.autoScaleEnabled,
+          autoScaleMin: scaleForm.autoScaleMin,
+          autoScaleMax: scaleForm.autoScaleMax,
+          autoScaleCpuUp: scaleForm.autoScaleCpuUp,
+          autoScaleMemUp: scaleForm.autoScaleMemUp,
+          autoScaleCpuDown: scaleForm.autoScaleCpuDown,
+          autoScaleMemDown: scaleForm.autoScaleMemDown,
+        },
+        { timeout: 60000 }
+      );
+      setScaleApp(null);
+      await load({ silent: true });
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Não foi possível ajustar réplicas/limites.');
+    } finally {
+      setScaling(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
@@ -296,25 +387,13 @@ export default function AplicacoesPage() {
               {items.length} {items.length === 1 ? 'app' : 'apps'}
             </span>
           </h1>
-          <p className="text-sm text-[#4c4f52] mt-1">
-            Cada app fica em{' '}
-            <code className="font-mono text-[12px]">https://central-apps-hub.com.br/&lt;app&gt;/</code>. Frontend em{' '}
-            <code className="font-mono text-[12px]">/hub-apps/apache</code>, backend em{' '}
-            <code className="font-mono text-[12px]">/hub-apps/servicos</code>.
-          </p>
         </div>
 
         {canManage && (
-          <div className="flex flex-wrap items-center gap-2">
-            <button className="btn-secondary text-xs h-8" onClick={() => openCreate('frontend')}>
-              <Globe className="w-4 h-4" />
-              <span>Upload frontend</span>
-            </button>
-            <button className="btn-primary text-xs h-8" onClick={() => openCreate('backend')}>
-              <Server className="w-4 h-4" />
-              <span>Upload backend</span>
-            </button>
-          </div>
+          <button className="btn-primary text-xs h-8" onClick={() => openCreate('both')}>
+            <Plus className="w-4 h-4" />
+            <span>Publicar</span>
+          </button>
         )}
       </div>
 
@@ -328,11 +407,7 @@ export default function AplicacoesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="card p-4">
-          <div className="text-[11px] text-[#808487] font-medium">Portas backend</div>
-          <div className="text-sm font-semibold mt-1">{pools ? `${pools.backend.start}–${pools.backend.end}` : '3100–3199'}</div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="card p-4">
           <div className="text-[11px] text-[#808487] font-medium">Portas Nginx</div>
           <div className="text-sm font-semibold mt-1">{pools ? `${pools.public.start}–${pools.public.end}` : '8100–8199'}</div>
@@ -422,6 +497,14 @@ export default function AplicacoesPage() {
                 {app.hasBackend && (
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f0f1f2] text-[#4c4f52] border border-[#e5e6e8]">
                     Backend · :{app.backendPort}
+                    {(app.replicas || 1) > 1 ? ` · ${app.replicas}×` : ''}
+                  </span>
+                )}
+                {app.hasBackend && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f0f4fb] text-[#0051c3] border border-[#d6e4f7]">
+                    {app.memoryLimitMb || 512}MB
+                    {app.cpuLimit ? ` · ${app.cpuLimit} CPU` : ''}
+                    {app.autoScaleEnabled ? ' · auto' : ''}
                   </span>
                 )}
                 {app.databaseName && (
@@ -520,7 +603,19 @@ export default function AplicacoesPage() {
               )}
 
               {canManage && (
-                <div className="flex items-center justify-end gap-1 pt-1 border-t border-[#e5e6e8] mt-auto">
+                <div className="flex items-center justify-end gap-1 pt-1 border-t border-[#e5e6e8] mt-auto flex-wrap">
+                  {app.hasBackend && (
+                    <button
+                      type="button"
+                      className="btn-ghost text-xs"
+                      onClick={() => openScale(app)}
+                      disabled={busyId === app.id || app.status === 'deploying'}
+                      title="Réplicas e limites de RAM/CPU"
+                    >
+                      <Boxes className="w-3.5 h-3.5" />
+                      Scale
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn-ghost text-xs"
@@ -564,55 +659,69 @@ export default function AplicacoesPage() {
       )}
 
       <div className="space-y-3">
-        <div>
-          <h2 className="text-[16px] font-semibold text-[#1d1f20]">Gestão de portas</h2>
-          <p className="text-xs text-[#808487] mt-1">
-            Portas do sistema ficam reservadas. Apps recebem backend em 3100–3199 e Nginx em 8100–8199.
-          </p>
-        </div>
-        <div className="card overflow-x-auto">
-          <table className="w-full text-left text-xs min-w-[640px]">
-            <thead className="text-[#808487] border-b border-[#e5e6e8]">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">Porta</th>
-                <th className="px-4 py-2.5 font-medium">Papel</th>
-                <th className="px-4 py-2.5 font-medium">Estado</th>
-                <th className="px-4 py-2.5 font-medium">Aplicação</th>
-                <th className="px-4 py-2.5 font-medium">Processo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ports.map((row) => (
-                <tr key={`${row.role}-${row.port}`} className="border-b border-[#f0f1f2] last:border-0">
-                  <td className="px-4 py-2.5 font-mono font-medium">{row.port}</td>
-                  <td className="px-4 py-2.5">{roleLabel(row.role)}</td>
-                  <td className="px-4 py-2.5">
-                    <span
-                      className={`px-2 py-0.5 rounded-full border ${
-                        row.status === 'listening'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : row.status === 'allocated'
-                          ? 'bg-[#f0f4fb] text-[#0051c3] border-[#d6e4f7]'
-                          : 'bg-[#f0f1f2] text-[#4c4f52] border-[#e5e6e8]'
-                      }`}
-                    >
-                      {portStatusLabel(row.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5">{row.appName || '—'}</td>
-                  <td className="px-4 py-2.5 font-mono text-[#808487]">{row.process || '—'}</td>
-                </tr>
-              ))}
-              {ports.length === 0 && (
+        <button
+          type="button"
+          className="w-full flex items-center justify-between gap-3 text-left group"
+          onClick={() => setPortsOpen((v) => !v)}
+          aria-expanded={portsOpen}
+        >
+          <div className="min-w-0">
+            <h2 className="text-[16px] font-semibold text-[#1d1f20] group-hover:text-[#0051c3] transition-colors">
+              Gestão de portas
+            </h2>
+            <p className="text-xs text-[#808487] mt-1">
+              Portas do sistema ficam reservadas. Apps recebem backend em 3100–3199 e Nginx em 8100–8199.
+            </p>
+          </div>
+          <span className="shrink-0 p-1.5 rounded-md text-[#808487] group-hover:bg-[#f0f1f2] group-hover:text-[#1d1f20]">
+            {portsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </span>
+        </button>
+        {portsOpen && (
+          <div className="card overflow-x-auto">
+            <table className="w-full text-left text-xs min-w-[640px]">
+              <thead className="text-[#808487] border-b border-[#e5e6e8]">
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[#808487]">
-                    Nenhuma porta listada ainda
-                  </td>
+                  <th className="px-4 py-2.5 font-medium">Porta</th>
+                  <th className="px-4 py-2.5 font-medium">Papel</th>
+                  <th className="px-4 py-2.5 font-medium">Estado</th>
+                  <th className="px-4 py-2.5 font-medium">Aplicação</th>
+                  <th className="px-4 py-2.5 font-medium">Processo</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {ports.map((row) => (
+                  <tr key={`${row.role}-${row.port}`} className="border-b border-[#f0f1f2] last:border-0">
+                    <td className="px-4 py-2.5 font-mono font-medium">{row.port}</td>
+                    <td className="px-4 py-2.5">{roleLabel(row.role)}</td>
+                    <td className="px-4 py-2.5">
+                      <span
+                        className={`px-2 py-0.5 rounded-full border ${
+                          row.status === 'listening'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : row.status === 'allocated'
+                            ? 'bg-[#f0f4fb] text-[#0051c3] border-[#d6e4f7]'
+                            : 'bg-[#f0f1f2] text-[#4c4f52] border-[#e5e6e8]'
+                        }`}
+                      >
+                        {portStatusLabel(row.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5">{row.appName || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-[#808487]">{row.process || '—'}</td>
+                  </tr>
+                ))}
+                {ports.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-[#808487]">
+                      Nenhuma porta listada ainda
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {modalOpen && (
@@ -671,6 +780,48 @@ export default function AplicacoesPage() {
                     />
                   </div>
                 </>
+              )}
+
+              {(focusSide === 'both' || focusSide === 'backend' || !!backendFile || (!!patchId && items.find((a) => a.id === patchId)?.hasBackend)) && (
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="label">Réplicas</label>
+                    <select
+                      className="input"
+                      value={form.replicas}
+                      onChange={(e) => setForm((f) => ({ ...f, replicas: Number(e.target.value) }))}
+                    >
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <option key={n} value={n}>
+                          {n}×
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">RAM / réplica</label>
+                    <select
+                      className="input"
+                      value={form.memoryLimitMb}
+                      onChange={(e) => setForm((f) => ({ ...f, memoryLimitMb: Number(e.target.value) }))}
+                    >
+                      {[256, 512, 768, 1024, 1536, 2048].map((n) => (
+                        <option key={n} value={n}>
+                          {n} MB
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">CPU (opcional)</label>
+                    <input
+                      className="input"
+                      placeholder="ex: 0.5"
+                      value={form.cpuLimit}
+                      onChange={(e) => setForm((f) => ({ ...f, cpuLimit: e.target.value }))}
+                    />
+                  </div>
+                </div>
               )}
 
               <div className={`grid grid-cols-1 ${focusSide === 'both' ? 'sm:grid-cols-2' : ''} gap-3`}>
@@ -738,6 +889,199 @@ export default function AplicacoesPage() {
                 Remover
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {scaleApp && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#1d1f20]/40 animate-fade-in">
+          <div className="card w-full max-w-lg p-5 sm:p-6 bg-white rounded-t-2xl sm:rounded-lg max-h-[92dvh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-[#1d1f20]">Scale · {scaleApp.name}</h3>
+                <p className="text-xs text-[#808487] mt-1">
+                  Réplicas, limites e auto-scale por CPU/RAM (monitora docker stats a cada ~45s).
+                </p>
+              </div>
+              <button className="p-1.5 rounded-md text-[#808487] hover:bg-[#f6f7f8]" onClick={() => setScaleApp(null)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={onScaleSubmit} className="space-y-4">
+              <label className="flex items-center gap-3 p-3 rounded-md border border-[#e5e6e8] bg-[#f6f7f8] cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="rounded border-[#c5c6c8]"
+                  checked={scaleForm.autoScaleEnabled}
+                  onChange={(e) => setScaleForm((f) => ({ ...f, autoScaleEnabled: e.target.checked }))}
+                />
+                <span className="text-sm text-[#1d1f20]">
+                  <span className="font-medium">Auto-scale</span>
+                  <span className="block text-[11px] text-[#808487]">
+                    Sobe réplica se CPU/RAM altos; desce se baixos (com cooldown).
+                  </span>
+                </span>
+              </label>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="label">{scaleForm.autoScaleEnabled ? 'Réplicas agora' : 'Réplicas'}</label>
+                  <select
+                    className="input"
+                    value={scaleForm.replicas}
+                    onChange={(e) =>
+                      setScaleForm((f) => {
+                        const replicas = Number(e.target.value);
+                        return {
+                          ...f,
+                          replicas,
+                          autoScaleMin: Math.min(f.autoScaleMin, replicas),
+                          autoScaleMax: Math.max(f.autoScaleMax, replicas),
+                        };
+                      })
+                    }
+                  >
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <option key={n} value={n}>
+                        {n}×
+                      </option>
+                    ))}
+                  </select>
+                  {scaleForm.autoScaleEnabled && (
+                    <p className="text-[10px] text-[#808487] mt-1">Auto-scale respeita min/max; isto define o valor atual.</p>
+                  )}
+                </div>
+                <div>
+                  <label className="label">RAM / réplica</label>
+                  <select
+                    className="input"
+                    value={scaleForm.memoryLimitMb}
+                    onChange={(e) => setScaleForm((f) => ({ ...f, memoryLimitMb: Number(e.target.value) }))}
+                  >
+                    {[256, 512, 768, 1024, 1536, 2048].map((n) => (
+                      <option key={n} value={n}>
+                        {n} MB
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">CPU</label>
+                  <input
+                    className="input"
+                    placeholder="0.5"
+                    value={scaleForm.cpuLimit}
+                    onChange={(e) => setScaleForm((f) => ({ ...f, cpuLimit: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {scaleForm.autoScaleEnabled && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Mín. réplicas</label>
+                      <select
+                        className="input"
+                        value={scaleForm.autoScaleMin}
+                        onChange={(e) =>
+                          setScaleForm((f) => ({
+                            ...f,
+                            autoScaleMin: Number(e.target.value),
+                            autoScaleMax: Math.max(Number(e.target.value), f.autoScaleMax),
+                          }))
+                        }
+                      >
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <option key={n} value={n}>
+                            {n}×
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Máx. réplicas</label>
+                      <select
+                        className="input"
+                        value={scaleForm.autoScaleMax}
+                        onChange={(e) =>
+                          setScaleForm((f) => ({
+                            ...f,
+                            autoScaleMax: Math.max(f.autoScaleMin, Number(e.target.value)),
+                          }))
+                        }
+                      >
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <option key={n} value={n}>
+                            {n}×
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Subir se CPU ≥</label>
+                      <input
+                        className="input"
+                        type="number"
+                        min={10}
+                        max={95}
+                        value={scaleForm.autoScaleCpuUp}
+                        onChange={(e) => setScaleForm((f) => ({ ...f, autoScaleCpuUp: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Subir se RAM ≥</label>
+                      <input
+                        className="input"
+                        type="number"
+                        min={10}
+                        max={95}
+                        value={scaleForm.autoScaleMemUp}
+                        onChange={(e) => setScaleForm((f) => ({ ...f, autoScaleMemUp: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Descer se CPU ≤</label>
+                      <input
+                        className="input"
+                        type="number"
+                        min={5}
+                        max={80}
+                        value={scaleForm.autoScaleCpuDown}
+                        onChange={(e) => setScaleForm((f) => ({ ...f, autoScaleCpuDown: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Descer se RAM ≤</label>
+                      <input
+                        className="input"
+                        type="number"
+                        min={5}
+                        max={80}
+                        value={scaleForm.autoScaleMemDown}
+                        onChange={(e) => setScaleForm((f) => ({ ...f, autoScaleMemDown: Number(e.target.value) }))}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <p className="text-[11px] text-[#808487]">
+                Com auto-scale, o Hub mantém um load balancer e ajusta réplicas sem rebuild. Em 1 máquina as réplicas
+                compartilham a mesma CPU/RAM do host.
+              </p>
+              <div className="flex justify-end gap-2">
+                <button type="button" className="btn-secondary text-xs" onClick={() => setScaleApp(null)} disabled={scaling}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-primary text-xs" disabled={scaling}>
+                  {scaling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Boxes className="w-3.5 h-3.5" />}
+                  <span>{scaling ? 'Aplicando…' : 'Aplicar'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

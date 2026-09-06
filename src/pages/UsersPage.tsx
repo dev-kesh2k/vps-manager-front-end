@@ -143,6 +143,7 @@ function formatDate(ts: number): string {
 export default function UsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [screens, setScreens] = useState<ScreenMeta[]>([]);
+  const [envRootUsername, setEnvRootUsername] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -159,6 +160,7 @@ export default function UsersPage() {
       const { data } = await api.get('/users');
       setUsers(data.users || []);
       setScreens(data.screens || []);
+      setEnvRootUsername(data.envRootUsername || null);
     } catch (err: any) {
       setNotify({ type: 'err', text: 'Erro ao carregar: ' + (err.response?.data?.error || err.message) });
     } finally {
@@ -290,7 +292,7 @@ export default function UsersPage() {
             </span>
           </h1>
           <p className="text-sm text-[#4c4f52] mt-1">
-            Controle de acesso granular baseado em funções (RBAC) e contas PAM do Linux
+            Contas do Hub armazenadas no PostgreSQL (separadas do root do .env)
           </p>
         </div>
 
@@ -313,8 +315,17 @@ export default function UsersPage() {
             <KeyRound className="w-4 h-4" />
           </div>
           <div className="text-xs text-[#4c4f52] leading-relaxed">
-            <div className="font-semibold text-[#1d1f20] mb-0.5">Integração Direta com o Sistema Linux</div>
-            Ao criar um usuário neste painel, a conta Linux correspondente é criada no WSL e a credencial é utilizada automaticamente para executar tarefas administrativas com privilégios <code className="text-[#0051c3] font-mono">sudo</code>.
+            <div className="font-semibold text-[#1d1f20] mb-0.5">Root do Hub × usuários do painel</div>
+            O root fica em <code className="text-[#0051c3] font-mono">AUTH_USERNAME</code> /{' '}
+            <code className="text-[#0051c3] font-mono">AUTH_PASSWORD</code> no arquivo{' '}
+            <code className="text-[#0051c3] font-mono">.env</code>
+            {envRootUsername ? (
+              <>
+                {' '}
+                (atual: <strong className="text-[#1d1f20]">{envRootUsername}</strong>)
+              </>
+            ) : null}
+            . Usuários criados aqui vão só para o banco de dados e não criam conta Linux.
           </div>
         </div>
       </div>
