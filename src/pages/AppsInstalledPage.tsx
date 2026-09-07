@@ -358,9 +358,9 @@ export default function AppsInstalledPage() {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Atualizar</span>
           </button>
-          <Link to="/apps/install" className="btn-primary text-xs h-8">
+          <Link to="/command?mode=install" className="btn-primary text-xs h-8">
             <PackageCheck className="w-4 h-4" />
-            <span>Catálogo de apps</span>
+            <span>Instalar app</span>
           </Link>
         </div>
       </div>

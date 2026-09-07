@@ -9,7 +9,6 @@ export type ScreenKey =
   | 'files'
   | 'logs'
   | 'appsInstalled'
-  | 'appsInstall'
   | 'users'
   | 'servers'
   | 'websites'

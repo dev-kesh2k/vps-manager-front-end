@@ -51,7 +51,6 @@ const ALL_SCREENS: ScreenKey[] = [
   'files',
   'logs',
   'appsInstalled',
-  'appsInstall',
   'users',
   'servers',
   'websites',
@@ -72,7 +71,6 @@ function defaultPermsForRole(role: Role): Record<ScreenKey, PermissionState> {
       'files',
       'logs',
       'appsInstalled',
-      'appsInstall',
       'websites',
       'aplicacoes',
     ];
@@ -240,12 +238,21 @@ export default function UsersPage() {
       if (editUser) {
         if (form.password) payload.password = form.password;
         await api.put(`/users/${editUser.id}`, payload);
-        setNotify({ type: 'ok', text: `Usuário "${form.username}" atualizado com sucesso.` });
+        const sudoHint =
+          form.role === 'admin'
+            ? ' Conta Linux com sudo atualizada.'
+            : ' Conta Linux sincronizada (sem sudo).';
+        setNotify({ type: 'ok', text: `Usuário "${form.username}" atualizado.${sudoHint}` });
       } else {
         payload.username = form.username.trim();
         payload.password = form.password;
         await api.post('/users', payload);
-        setNotify({ type: 'ok', text: `Usuário Linux "${form.username}" criado com sucesso no host WSL.` });
+        const sudoHint =
+          form.role === 'admin' ? ' (com sudo no Linux)' : ' (sem sudo no Linux)';
+        setNotify({
+          type: 'ok',
+          text: `Usuário "${form.username}" criado no Hub e no Linux${sudoHint}.`,
+        });
       }
 
       closeModal();
@@ -259,14 +266,21 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (u: UserRow) => {
-    if (!window.confirm(`Deseja realmente excluir o usuário "${u.username}" da aplicação?`)) return;
+    if (
+      !window.confirm(
+        `Deseja excluir "${u.username}" do painel e também a conta Linux correspondente?`
+      )
+    )
+      return;
     setDeletingId(u.id);
     setNotify(null);
     try {
-      await api.delete(`/users/${u.id}`);
+      const { data } = await api.delete(`/users/${u.id}`);
       setNotify({
-        type: 'ok',
-        text: `Usuário "${u.username}" removido do painel.`,
+        type: data?.linuxWarning ? 'err' : 'ok',
+        text: data?.linuxWarning
+          ? `Removido do painel, mas falhou no Linux: ${data.linuxWarning}`
+          : `Usuário "${u.username}" removido do painel e do Linux.`,
       });
       load();
     } catch (err: any) {
@@ -292,7 +306,7 @@ export default function UsersPage() {
             </span>
           </h1>
           <p className="text-sm text-[#4c4f52] mt-1">
-            Contas do Hub armazenadas no PostgreSQL (separadas do root do .env)
+            Contas do Hub + usuário Linux no host (admin recebe grupo sudo)
           </p>
         </div>
 
@@ -325,7 +339,9 @@ export default function UsersPage() {
                 (atual: <strong className="text-[#1d1f20]">{envRootUsername}</strong>)
               </>
             ) : null}
-            . Usuários criados aqui vão só para o banco de dados e não criam conta Linux.
+            . Usuários criados aqui entram no PostgreSQL e também como conta Linux no host.
+            Papel <strong className="text-[#1d1f20]">Administrador</strong> adiciona o usuário ao grupo{' '}
+            <code className="text-[#0051c3] font-mono">sudo</code>.
           </div>
         </div>
       </div>
@@ -564,7 +580,9 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between">
                   <label className="label mb-0">Permissões Específicas por Módulo</label>
                   <span className="text-[11px] text-[#808487]">
-                    {form.role === 'admin' ? 'Administradores têm acesso total automático.' : 'Configure o acesso individualmente:'}
+                    {form.role === 'admin'
+                      ? 'Administradores têm acesso total no Hub e grupo sudo no Linux.'
+                      : 'Configure o acesso individualmente:'}
                   </span>
                 </div>
 
