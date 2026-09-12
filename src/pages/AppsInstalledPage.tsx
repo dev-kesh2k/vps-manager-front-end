@@ -99,6 +99,8 @@ export default function AppsInstalledPage() {
   // Toast feedback
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
+  const [syncingRoutes, setSyncingRoutes] = useState(false);
+
   const showToast = (type: 'success' | 'error' | 'info', text: string) => {
     setToast({ type, text });
     setTimeout(() => setToast(null), 5000);
@@ -113,6 +115,30 @@ export default function AppsInstalledPage() {
       setPublicOrigin(data.publicOrigin || '');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncRoutes = async () => {
+    setSyncingRoutes(true);
+    try {
+      const { data } = await api.post<{
+        ok: boolean;
+        message?: string;
+        catalogPaths?: string[];
+        error?: string;
+      }>('/apps/sync-routes');
+      await load();
+      const paths = (data.catalogPaths || []).map((p) => `/${p}`).join(', ');
+      showToast(
+        data.ok ? 'success' : 'info',
+        data.message
+          ? `${data.message}${paths ? ` Rotas: ${paths}` : ''}`
+          : `Rotas sincronizadas${paths ? `: ${paths}` : ''}.`
+      );
+    } catch (err: any) {
+      showToast('error', err?.response?.data?.error || err?.message || 'Falha ao sincronizar rotas');
+    } finally {
+      setSyncingRoutes(false);
     }
   };
 
@@ -349,6 +375,15 @@ export default function AppsInstalledPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={syncRoutes}
+            disabled={loading || syncingRoutes}
+            className="btn-secondary text-xs h-8"
+            title="Sincroniza proxy Apache e rotas Cloudflare dos apps instalados"
+          >
+            <Globe className={`w-3.5 h-3.5 ${syncingRoutes ? 'animate-pulse' : ''}`} />
+            <span>{syncingRoutes ? 'Sincronizando…' : 'Sincronizar Cloudflare'}</span>
+          </button>
           <button
             onClick={load}
             disabled={loading}

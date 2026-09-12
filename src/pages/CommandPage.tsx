@@ -148,6 +148,73 @@ export default function CommandPage() {
     setResult(null);
   };
 
+  const pollInstallJob = async (jobId: string, startedAt: number) => {
+    const maxWaitMs = Math.max(timeoutSeconds, 600) * 1000;
+    const deadline = Date.now() + maxWaitMs;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const { data } = await api.get<{ job: { status: string; output?: string; error?: string; finishedAt?: number } }>(
+        `/apps/jobs/${jobId}`
+      );
+      const job = data.job;
+      if (!job) continue;
+      if (job.status === 'running') continue;
+      const elapsed = (job.finishedAt || Date.now()) - startedAt;
+      return {
+        success: job.status === 'success',
+        stdout: job.output || '',
+        stderr: job.error || '',
+        exitCode: job.status === 'success' ? 0 : 1,
+        executionTimeMs: Math.max(0, elapsed),
+        command: selectedApp
+          ? `POST /apps/install/${selectedApp.id}  # ${selectedApp.name} (Apache + Cloudflare)`
+          : `job ${jobId}`,
+      };
+    }
+    return {
+      success: false,
+      stdout: '',
+      stderr: 'Timeout aguardando o job de instalação. Veja Apps instalados ou tente sincronizar as rotas.',
+      exitCode: -1,
+      executionTimeMs: maxWaitMs,
+      command: selectedApp ? `POST /apps/install/${selectedApp.id}` : `job ${jobId}`,
+    };
+  };
+
+  const doInstallCatalogApp = async () => {
+    if (!selectedAppId) {
+      setResult({
+        success: false,
+        stdout: '',
+        stderr: 'Selecione um app no catálogo antes de instalar.',
+        exitCode: -1,
+        executionTimeMs: 0,
+        command: '',
+      });
+      return;
+    }
+    setLoading(true);
+    setResult(null);
+    try {
+      const { data } = await api.post<{ jobId: string; status: string; startedAt: number }>(
+        `/apps/install/${selectedAppId}`
+      );
+      const result = await pollInstallJob(data.jobId, data.startedAt || Date.now());
+      setResult(result);
+    } catch (err: any) {
+      setResult({
+        success: false,
+        stdout: '',
+        stderr: err.response?.data?.error || err.message || 'Erro ao iniciar instalação',
+        exitCode: -1,
+        executionTimeMs: 0,
+        command: `POST /apps/install/${selectedAppId}`,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const doRun = async (cmd?: string) => {
     const toRun = (cmd ?? command).trim();
     if (!toRun) return;
@@ -176,6 +243,10 @@ export default function CommandPage() {
 
   const runWithEvent = async (e: FormEvent) => {
     e.preventDefault();
+    if (mode === 'install' && selectedAppId) {
+      await doInstallCatalogApp();
+      return;
+    }
     await doRun(command);
   };
 
@@ -204,7 +275,7 @@ export default function CommandPage() {
             </span>
           </h1>
           <p className="text-sm text-[#4c4f52] mt-1">
-            Rode comandos no host ou instale pacotes e apps Linux a partir do catálogo
+            Rode comandos no host ou instale apps do catálogo (aparecem em Aplicações com rota Cloudflare)
           </p>
         </div>
       </div>
@@ -398,7 +469,9 @@ export default function CommandPage() {
               />
             </div>
             {mode === 'install' && (
-              <p className="text-[11px] text-[#808487]">Instalações longas: use 600–1800s.</p>
+              <p className="text-[11px] text-[#808487]">
+                A instalação pelo catálogo configura proxy Apache e rota Cloudflare automaticamente.
+              </p>
             )}
           </div>
         </div>
@@ -407,17 +480,20 @@ export default function CommandPage() {
           <button
             type="submit"
             className="btn-primary text-xs px-6 py-2.5"
-            disabled={loading || !command.trim()}
+            disabled={
+              loading ||
+              (mode === 'install' ? !selectedAppId : !command.trim())
+            }
           >
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Executando…</span>
+                <span>{mode === 'install' ? 'Instalando…' : 'Executando…'}</span>
               </>
             ) : mode === 'install' ? (
               <>
                 <PackagePlus className="w-4 h-4" />
-                <span>Executar instalação</span>
+                <span>Instalar e publicar rota</span>
               </>
             ) : (
               <>

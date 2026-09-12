@@ -13,7 +13,6 @@ const LogsPage = lazy(() => import('./pages/LogsPage'));
 const CommandPage = lazy(() => import('./pages/CommandPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const ServersPage = lazy(() => import('./pages/ServersPage'));
-const AppsInstalledPage = lazy(() => import('./pages/AppsInstalledPage'));
 const WebsitesPage = lazy(() => import('./pages/WebsitesPage'));
 const AplicacoesPage = lazy(() => import('./pages/AplicacoesPage'));
 
@@ -165,16 +164,7 @@ export default function App() {
             </RequireScreen>
           }
         />
-        <Route
-          path="/apps/installed"
-          element={
-            <RequireScreen screen="appsInstalled">
-              <LazyPage>
-                <AppsInstalledPage />
-              </LazyPage>
-            </RequireScreen>
-          }
-        />
+        <Route path="/apps/installed" element={<Navigate to="/aplicacoes" replace />} />
         <Route path="/apps/install" element={<Navigate to="/command?mode=install" replace />} />
         <Route
           path="/aplicacoes"

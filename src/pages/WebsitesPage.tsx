@@ -10,6 +10,7 @@ import {
   Loader2,
   AlertCircle,
   Link2,
+  RefreshCw,
 } from 'lucide-react';
 import api from '../lib/api';
 import { safeExternalUrl } from '../lib/safe-url';
@@ -20,6 +21,7 @@ interface Website {
   name: string;
   url: string;
   description?: string;
+  managed?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -50,6 +52,7 @@ export default function WebsitesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Website | null>(null);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', url: '', description: '' });
 
@@ -63,6 +66,19 @@ export default function WebsitesPage() {
       setError(e?.response?.data?.error || 'Não foi possível carregar os sites.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncFromHub = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      const { data } = await api.post('/websites/sync');
+      setItems(data.websites || []);
+    } catch (e: any) {
+      setError(e?.response?.data?.error || 'Não foi possível sincronizar apps/Cloudflare.');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -137,15 +153,31 @@ export default function WebsitesPage() {
             </span>
           </h1>
           <p className="text-sm text-[#4c4f52] mt-1">
-            Atalhos para abrir os seus sites, painéis e aplicações web
+            Apps instalados e rotas Cloudflare aparecem aqui com nome e URL; você também pode
+            adicionar atalhos manuais
           </p>
         </div>
 
         {canManage && (
-          <button className="btn-primary text-xs h-8" onClick={openCreate}>
-            <Plus className="w-4 h-4" />
-            <span>Adicionar site</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="btn-secondary text-xs h-8"
+              onClick={syncFromHub}
+              disabled={syncing}
+            >
+              {syncing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              <span>Sincronizar Hub</span>
+            </button>
+            <button className="btn-primary text-xs h-8" onClick={openCreate}>
+              <Plus className="w-4 h-4" />
+              <span>Adicionar site</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -196,7 +228,7 @@ export default function WebsitesPage() {
           </div>
           <p className="text-xs text-[#808487] max-w-sm mx-auto">
             {items.length === 0
-              ? 'Adicione cards com o nome e o link dos seus sites para abrir em um clique.'
+              ? 'Sincronize o Hub para trazer apps e rotas Cloudflare, ou adicione um atalho manual.'
               : 'Ajuste os termos da pesquisa para encontrar o atalho.'}
           </p>
           {canManage && items.length === 0 && (
@@ -209,7 +241,6 @@ export default function WebsitesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((w) => {
-            const host = hostnameOf(w.url);
             const favicon = faviconOf(w.url);
             const href = safeExternalUrl(w.url);
             const cardClass =
@@ -226,8 +257,15 @@ export default function WebsitesPage() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-[#1d1f20] text-sm truncate">{w.name}</div>
-                      <div className="text-[11px] text-[#808487] font-mono truncate">{host}</div>
+                      <div className="font-semibold text-[#1d1f20] text-sm truncate flex items-center gap-1.5">
+                        <span className="truncate">{w.name}</span>
+                        {w.managed && (
+                          <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#eef4fc] text-[#0051c3] border border-[#d6e4f7]">
+                            Hub
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-[#808487] font-mono truncate">{w.url}</div>
                     </div>
                   </div>
                   <ExternalLink className="w-4 h-4 text-[#c5c6c8] group-hover:text-[#0051c3] shrink-0 mt-1" />
@@ -237,7 +275,7 @@ export default function WebsitesPage() {
                   <p className="text-xs text-[#4c4f52] line-clamp-2 leading-relaxed">{w.description}</p>
                 )}
 
-                {canManage && (
+                {canManage && !w.managed && (
                   <div className="flex items-center justify-end gap-1 pt-1 border-t border-[#e5e6e8] mt-auto">
                     <button
                       type="button"

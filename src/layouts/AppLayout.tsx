@@ -10,7 +10,6 @@ import {
   Server,
   Menu,
   X,
-  PackageCheck,
   Users,
   Globe,
   Boxes,
@@ -19,10 +18,13 @@ import {
   Plus,
   Cpu,
   Search,
+  RotateCw,
+  Loader2,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore, ScreenKey } from '../store/auth';
 import { useServerStore } from '../store/server';
+import api from '../lib/api';
 
 type NavItem = {
   to: string;
@@ -36,7 +38,6 @@ type NavItem = {
 const ALL_NAV: NavItem[] = [
   { to: '/', label: 'Página inicial', icon: LayoutDashboard, end: true, screen: 'dashboard', section: 'Recentes' },
   { to: '/aplicacoes', label: 'Aplicações', icon: Boxes, screen: 'aplicacoes', section: 'Aplicações' },
-  { to: '/apps/installed', label: 'Apps instalados', icon: PackageCheck, screen: 'appsInstalled', section: 'Aplicações' },
   { to: '/websites', label: 'Website', icon: Globe, screen: 'websites', section: 'Aplicações' },
   { to: '/terminal', label: 'Terminal SSH', icon: TerminalSquare, screen: 'terminal', section: 'Sistema' },
   { to: '/command', label: 'Executar comando', icon: SlidersHorizontal, screen: 'command', section: 'Sistema' },
@@ -67,8 +68,41 @@ export default function AppLayout() {
   const [serverDropdownOpen, setServerDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [navQuery, setNavQuery] = useState('');
+  const [restartingBackend, setRestartingBackend] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const waitForBackend = async (timeoutMs = 45000) => {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+      try {
+        const res = await fetch('/health', { cache: 'no-store' });
+        if (res.ok) return true;
+      } catch {
+        /* backend ainda subindo */
+      }
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    return false;
+  };
+
+  const restartBackend = async () => {
+    if (restartingBackend) return;
+    if (!window.confirm('Reiniciar o backend do Central HUB? O painel fica indisponível por alguns segundos.')) {
+      return;
+    }
+    setUserMenuOpen(false);
+    setRestartingBackend(true);
+    try {
+      await api.post('/system/restart-backend');
+      const up = await waitForBackend();
+      window.alert(up ? 'Backend reiniciado com sucesso.' : 'Reinício enviado, mas o backend ainda não respondeu. Tente atualizar a página.');
+    } catch (err: any) {
+      window.alert('Falha ao reiniciar: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setRestartingBackend(false);
+    }
+  };
 
   useEffect(() => {
     fetchServers();
@@ -214,6 +248,22 @@ export default function AppLayout() {
           </div>
 
           <div className="flex items-center gap-2">
+            {role === 'admin' && (
+              <button
+                type="button"
+                onClick={restartBackend}
+                disabled={restartingBackend}
+                className="inline-flex items-center gap-1.5 h-9 sm:h-8 px-2.5 rounded-md bg-white border border-[#c5c6c8] text-[12px] font-medium text-[#313335] hover:bg-[#f6f7f8] disabled:opacity-60"
+                title="Reiniciar backend do Central HUB"
+              >
+                {restartingBackend ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0051c3]" />
+                ) : (
+                  <RotateCw className="w-3.5 h-3.5 text-[#0051c3]" />
+                )}
+                <span className="hidden sm:inline">{restartingBackend ? 'Reiniciando…' : 'Reiniciar backend'}</span>
+              </button>
+            )}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setServerDropdownOpen(!serverDropdownOpen)}
@@ -291,6 +341,21 @@ export default function AppLayout() {
                     <div className="text-[13px] font-medium text-[#1d1f20] truncate">{user || 'Usuário'}</div>
                     <div className="text-[11px] text-[#808487]">{roleLabel(role)}</div>
                   </div>
+                  {role === 'admin' && (
+                    <button
+                      type="button"
+                      onClick={restartBackend}
+                      disabled={restartingBackend}
+                      className="flex items-center gap-2 w-full px-2.5 py-2 rounded-md text-[12px] text-[#313335] hover:bg-[#f6f7f8] disabled:opacity-60"
+                    >
+                      {restartingBackend ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <RotateCw className="w-3.5 h-3.5" />
+                      )}
+                      {restartingBackend ? 'Reiniciando…' : 'Reiniciar backend'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {

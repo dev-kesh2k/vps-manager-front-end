@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Boxes,
   Upload,
@@ -17,9 +18,16 @@ import {
   ShieldAlert,
   ChevronDown,
   ChevronUp,
+  Play,
+  Square,
+  RotateCw,
+  PackagePlus,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import api from '../lib/api';
 import { useAuthStore } from '../store/auth';
+import { safeExternalUrl } from '../lib/safe-url';
 
 interface HubApplication {
   id: string;
@@ -55,6 +63,27 @@ interface HubApplication {
   lastScaleAt?: number;
   createdAt: number;
   updatedAt: number;
+}
+
+interface CatalogInstalledApp {
+  id: string;
+  name: string;
+  icon: string;
+  category: string;
+  description: string;
+  installed: boolean;
+  running: boolean | null;
+  defaultPort?: number;
+  postInstallHint?: string;
+  startCommand?: string;
+  stopCommand?: string;
+  restartCommand?: string;
+  composePath?: string;
+  isDocker?: boolean;
+  nginxPath?: string;
+  publicUrl?: string;
+  localUrl?: string;
+  hasWebUi?: boolean;
 }
 
 interface PortAllocation {
@@ -138,10 +167,17 @@ function FileDrop({
 
 export default function AplicacoesPage() {
   const canManage = useAuthStore((s) => s.canAccess('aplicacoes', 'full'));
+  const canInstall = useAuthStore((s) => s.canAccess('command', 'full'));
   const [items, setItems] = useState<HubApplication[]>([]);
+  const [catalogApps, setCatalogApps] = useState<CatalogInstalledApp[]>([]);
+  const [catalogCfOk, setCatalogCfOk] = useState(false);
+  const [catalogCfMessage, setCatalogCfMessage] = useState('');
+  const [syncingRoutes, setSyncingRoutes] = useState(false);
+  const [catalogBusyId, setCatalogBusyId] = useState<string | null>(null);
   const [ports, setPorts] = useState<PortAllocation[]>([]);
   const [pools, setPools] = useState<PortPools | null>(null);
   const [loading, setLoading] = useState(true);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [portsOpen, setPortsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,23 +210,105 @@ export default function AplicacoesPage() {
     autoScaleMemDown: 40,
   });
   const [scaling, setScaling] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
+  const [showHidden, setShowHidden] = useState(false);
+  const [hidingKey, setHidingKey] = useState<string | null>(null);
 
-  const load = async (opts?: { silent?: boolean }) => {
+  const hubKey = (id: string) => `hub:${id}`;
+  const catalogKey = (id: string) => `catalog:${id}`;
+
+  const load = async (opts?: { silent?: boolean; forceCatalog?: boolean }) => {
     if (!opts?.silent) {
       setLoading(true);
       setError(null);
     }
     try {
-      const [appsRes, portsRes] = await Promise.all([api.get('/aplicacoes'), api.get('/aplicacoes/ports')]);
-      setItems(appsRes.data.applications || []);
+      const [appsRes, portsRes, hiddenRes] = await Promise.all([
+        api.get('/aplicacoes'),
+        api.get('/aplicacoes/ports'),
+        api.get('/aplicacoes/hidden').catch(() => ({ data: { hiddenIds: [] } })),
+      ]);
+      const hubApps: HubApplication[] = appsRes.data.applications || [];
+      setItems(hubApps);
       setPorts(portsRes.data.ports || []);
       setPools(portsRes.data.pools || null);
+      setHiddenIds(Array.isArray(hiddenRes.data.hiddenIds) ? hiddenRes.data.hiddenIds : []);
+      const anyCf = hubApps.some((a) => a.cloudflareEnabled);
+      if (anyCf) {
+        setCatalogCfOk(true);
+        setCatalogCfMessage('Cloudflare atualizado');
+      }
     } catch (e: any) {
       if (!opts?.silent) {
         setError(e?.response?.data?.error || 'Não foi possível carregar as aplicações.');
       }
     } finally {
       if (!opts?.silent) setLoading(false);
+    }
+
+    if (!opts?.silent) setCatalogLoading(true);
+    try {
+      const catalogRes = await api
+        .get('/apps/installed', {
+          params: opts?.forceCatalog ? { force: 1 } : undefined,
+          timeout: 120000,
+        })
+        .catch(() => ({ data: { apps: [] } }));
+      const installed = ((catalogRes.data.apps || []) as CatalogInstalledApp[]).filter((a) => a.installed);
+      setCatalogApps(installed);
+    } catch {
+      /* ignore catalog errors — hub apps already visible */
+    } finally {
+      setCatalogLoading(false);
+    }
+  };
+
+  const setAppHidden = async (key: string, hide: boolean) => {
+    if (!canManage) return;
+    setHidingKey(key);
+    setError(null);
+    const next = hide
+      ? Array.from(new Set([...hiddenIds, key]))
+      : hiddenIds.filter((id) => id !== key);
+    try {
+      const { data } = await api.put<{ hiddenIds: string[] }>('/aplicacoes/hidden', { hiddenIds: next });
+      setHiddenIds(data.hiddenIds || next);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Não foi possível atualizar a visibilidade.');
+    } finally {
+      setHidingKey(null);
+    }
+  };
+
+  const syncAllRoutes = async () => {
+    setSyncingRoutes(true);
+    setError(null);
+    try {
+      const { data } = await api.post<{ ok: boolean; message?: string; catalogPaths?: string[] }>(
+        '/apps/sync-routes',
+        {},
+        { timeout: 120000 }
+      );
+      setCatalogCfOk(!!data.ok);
+      setCatalogCfMessage(data.message || (data.ok ? 'Cloudflare atualizado' : 'Cloudflare pendente'));
+      await load({ silent: true, forceCatalog: true });
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Não foi possível sincronizar as rotas no Cloudflare.');
+    } finally {
+      setSyncingRoutes(false);
+    }
+  };
+
+  const onCatalogAction = async (appId: string, action: 'start' | 'stop' | 'restart') => {
+    setCatalogBusyId(appId);
+    setError(null);
+    try {
+      await api.post(`/apps/action/${appId}`, { action }, { timeout: 120000 });
+      await load({ silent: true, forceCatalog: true });
+    } catch (err: any) {
+      setError(err?.response?.data?.error || `Falha ao executar ${action}.`);
+    } finally {
+      setCatalogBusyId(null);
     }
   };
 
@@ -209,14 +327,41 @@ export default function AplicacoesPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(
-      (a) =>
+    return items.filter((a) => {
+      const isHidden = hiddenIds.includes(hubKey(a.id));
+      if (!showHidden && isHidden) return false;
+      if (!q) return true;
+      return (
         a.name.toLowerCase().includes(q) ||
         a.slug.toLowerCase().includes(q) ||
         (a.description || '').toLowerCase().includes(q)
-    );
-  }, [items, search]);
+      );
+    });
+  }, [items, search, hiddenIds, showHidden]);
+
+  const filteredCatalog = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return catalogApps.filter((a) => {
+      const isHidden = hiddenIds.includes(catalogKey(a.id));
+      if (!showHidden && isHidden) return false;
+      if (!q) return true;
+      return (
+        a.name.toLowerCase().includes(q) ||
+        a.id.toLowerCase().includes(q) ||
+        (a.description || '').toLowerCase().includes(q) ||
+        (a.nginxPath || '').toLowerCase().includes(q)
+      );
+    });
+  }, [catalogApps, search, hiddenIds, showHidden]);
+
+  const hiddenCount = useMemo(() => {
+    const hubHidden = items.filter((a) => hiddenIds.includes(hubKey(a.id))).length;
+    const catalogHidden = catalogApps.filter((a) => hiddenIds.includes(catalogKey(a.id))).length;
+    return hubHidden + catalogHidden;
+  }, [items, catalogApps, hiddenIds]);
+
+  const totalApps = items.length + catalogApps.length;
+  const visibleCount = filtered.length + filteredCatalog.length;
 
   const openCreate = (side: 'frontend' | 'backend' | 'both' = 'both') => {
     setPatchId(null);
@@ -384,17 +529,51 @@ export default function AplicacoesPage() {
           <h1 className="text-[22px] font-semibold tracking-tight text-[#1d1f20] flex items-center gap-2.5">
             <span>Aplicações</span>
             <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#f0f1f2] text-[#4c4f52] border border-[#e5e6e8]">
-              {items.length} {items.length === 1 ? 'app' : 'apps'}
+              {visibleCount} visíveis
+              {hiddenCount > 0 ? ` · ${hiddenCount} ocultas` : ''}
             </span>
           </h1>
+          <p className="text-sm text-[#4c4f52] mt-1">
+            Uploads do Hub e apps do catálogo (Portainer, Pi-hole…) com rotas Cloudflare
+          </p>
         </div>
 
-        {canManage && (
-          <button className="btn-primary text-xs h-8" onClick={() => openCreate('both')}>
-            <Plus className="w-4 h-4" />
-            <span>Publicar</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {hiddenCount > 0 && (
+            <button
+              type="button"
+              className="btn-secondary text-xs h-8"
+              onClick={() => setShowHidden((v) => !v)}
+              title={showHidden ? 'Ocultar apps escondidos da lista' : 'Mostrar apps ocultos'}
+            >
+              {showHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              <span>{showHidden ? 'Esconder ocultos' : `Mostrar ocultos (${hiddenCount})`}</span>
+            </button>
+          )}
+          {canManage && (
+            <button
+              className="btn-secondary text-xs h-8"
+              onClick={syncAllRoutes}
+              disabled={syncingRoutes}
+              title="Sincroniza proxy e rotas Cloudflare"
+            >
+              {syncingRoutes ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
+              <span>{syncingRoutes ? 'Sincronizando…' : 'Sincronizar Cloudflare'}</span>
+            </button>
+          )}
+          {canInstall && (
+            <Link to="/command?mode=install" className="btn-secondary text-xs h-8">
+              <PackagePlus className="w-4 h-4" />
+              <span>Instalar app</span>
+            </Link>
+          )}
+          {canManage && (
+            <button className="btn-primary text-xs h-8" onClick={() => openCreate('both')}>
+              <Plus className="w-4 h-4" />
+              <span>Publicar</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {error && !modalOpen && (
@@ -448,29 +627,51 @@ export default function AplicacoesPage() {
             </div>
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : filtered.length === 0 && filteredCatalog.length === 0 && !catalogLoading ? (
         <div className="card p-12 text-center space-y-3">
           <Boxes className="w-12 h-12 mx-auto text-[#c5c6c8]" />
           <div className="text-base font-semibold text-[#1d1f20]">
-            {items.length === 0 ? 'Nenhuma aplicação publicada' : 'Nenhuma aplicação encontrada'}
+            {totalApps === 0 ? 'Nenhuma aplicação publicada' : 'Nenhuma aplicação encontrada'}
           </div>
           <p className="text-xs text-[#808487] max-w-sm mx-auto">
-            Envie o ZIP do frontend (Apache) e/ou do backend (serviços). O Hub escolhe a porta e configura o Nginx.
+            Publique um ZIP (frontend/backend) ou instale apps do catálogo como Portainer e Pi-hole.
           </p>
-          {canManage && items.length === 0 && (
-            <button className="btn-primary text-xs h-8 mx-auto mt-2" onClick={() => openCreate('both')}>
-              <Upload className="w-4 h-4" />
-              Publicar primeira aplicação
-            </button>
-          )}
+          <div className="flex items-center justify-center gap-2 pt-2">
+            {canInstall && totalApps === 0 && (
+              <Link to="/command?mode=install" className="btn-secondary text-xs h-8">
+                <PackagePlus className="w-4 h-4" />
+                Instalar app
+              </Link>
+            )}
+            {canManage && items.length === 0 && (
+              <button className="btn-primary text-xs h-8" onClick={() => openCreate('both')}>
+                <Upload className="w-4 h-4" />
+                Publicar primeira aplicação
+              </button>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {filtered.map((app) => (
-            <div key={app.id} className="card p-5 flex flex-col gap-3">
+        <div className="space-y-6">
+          {filtered.length > 0 && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {filtered.map((app) => (
+            <div
+              key={app.id}
+              className={`card p-5 flex flex-col gap-3 ${
+                hiddenIds.includes(hubKey(app.id)) ? 'opacity-70 border-dashed' : ''
+              }`}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="font-semibold text-[#1d1f20] text-sm truncate">{app.name}</div>
+                  <div className="font-semibold text-[#1d1f20] text-sm truncate flex items-center gap-2">
+                    <span className="truncate">{app.name}</span>
+                    {hiddenIds.includes(hubKey(app.id)) && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#f0f1f2] text-[#808487] border border-[#e5e6e8]">
+                        Oculta
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[11px] text-[#808487] font-mono truncate">{app.slug}</div>
                 </div>
                 <span
@@ -604,6 +805,22 @@ export default function AplicacoesPage() {
 
               {canManage && (
                 <div className="flex items-center justify-end gap-1 pt-1 border-t border-[#e5e6e8] mt-auto flex-wrap">
+                  <button
+                    type="button"
+                    className="btn-ghost text-xs"
+                    disabled={hidingKey === hubKey(app.id)}
+                    onClick={() => setAppHidden(hubKey(app.id), !hiddenIds.includes(hubKey(app.id)))}
+                    title={hiddenIds.includes(hubKey(app.id)) ? 'Mostrar aplicação' : 'Ocultar aplicação'}
+                  >
+                    {hidingKey === hubKey(app.id) ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : hiddenIds.includes(hubKey(app.id)) ? (
+                      <Eye className="w-3.5 h-3.5" />
+                    ) : (
+                      <EyeOff className="w-3.5 h-3.5" />
+                    )}
+                    {hiddenIds.includes(hubKey(app.id)) ? 'Mostrar' : 'Ocultar'}
+                  </button>
                   {app.hasBackend && (
                     <button
                       type="button"
@@ -655,6 +872,187 @@ export default function AplicacoesPage() {
               )}
             </div>
           ))}
+            </div>
+          )}
+
+          {catalogLoading && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs text-[#808487]">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Carregando apps do catálogo…
+              </div>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={`cat-skel-${i}`} className="card p-5 h-36 animate-pulse">
+                    <div className="h-4 bg-[#f0f1f2] rounded w-1/3 mb-3" />
+                    <div className="h-3 bg-[#f6f7f8] rounded w-2/3" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!catalogLoading && filteredCatalog.length > 0 && (
+            <div className="space-y-3">
+              <div>
+                <h2 className="text-[16px] font-semibold text-[#1d1f20]">Apps do catálogo</h2>
+                <p className="text-xs text-[#808487] mt-1">
+                  Instalados via catálogo Linux — proxy Apache e rotas Cloudflare em /caminho/
+                </p>
+              </div>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {filteredCatalog.map((app) => {
+                  const publicHref = safeExternalUrl(app.publicUrl) || safeExternalUrl(app.localUrl);
+                  const routeLabel = app.nginxPath ? `${app.nginxPath.replace(/\/$/, '')}/` : null;
+                  const busy = catalogBusyId === app.id;
+                  const key = catalogKey(app.id);
+                  const isHidden = hiddenIds.includes(key);
+                  return (
+                    <div
+                      key={`catalog-${app.id}`}
+                      className={`card p-5 flex flex-col gap-3 ${isHidden ? 'opacity-70 border-dashed' : ''}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex items-start gap-2">
+                          <span className="text-lg leading-none mt-0.5">{app.icon}</span>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-[#1d1f20] text-sm truncate flex items-center gap-2">
+                              <span className="truncate">{app.name}</span>
+                              {isHidden && (
+                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#f0f1f2] text-[#808487] border border-[#e5e6e8]">
+                                  Oculta
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-[#808487] font-mono truncate">{app.id}</div>
+                          </div>
+                        </div>
+                        <span
+                          className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                            app.running === true
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : app.running === false
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : 'bg-[#f0f1f2] text-[#4c4f52] border-[#e5e6e8]'
+                          }`}
+                        >
+                          {app.running === true ? 'Rodando' : app.running === false ? 'Parado' : 'Instalado'}
+                        </span>
+                      </div>
+
+                      {app.description && (
+                        <p className="text-xs text-[#4c4f52] line-clamp-2">{app.description}</p>
+                      )}
+
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f0f1f2] text-[#4c4f52] border border-[#e5e6e8]">
+                          Catálogo
+                        </span>
+                        {app.defaultPort && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f0f4fb] text-[#0051c3] border border-[#d6e4f7]">
+                            Porta {app.defaultPort}
+                          </span>
+                        )}
+                        {routeLabel && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f0f4fb] text-[#0051c3] border border-[#d6e4f7]">
+                            Rota {routeLabel}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5 text-[12px]">
+                        {publicHref && (
+                          <a
+                            href={publicHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-[#0051c3] hover:underline"
+                          >
+                            <Globe className="w-3.5 h-3.5" />
+                            <span className="truncate font-mono">{app.publicUrl || app.localUrl}</span>
+                            <ExternalLink className="w-3 h-3 shrink-0" />
+                          </a>
+                        )}
+                      </div>
+
+                      {!!app.nginxPath && (
+                        <div
+                          className={`flex items-start gap-2 text-[11px] rounded-md px-2.5 py-2 border ${
+                            catalogCfOk
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                              : 'bg-amber-50 border-amber-200 text-amber-800'
+                          }`}
+                        >
+                          {catalogCfOk ? (
+                            <ShieldCheck className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                          ) : (
+                            <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                          )}
+                          <span>
+                            {catalogCfOk
+                              ? catalogCfMessage || 'Cloudflare publicado'
+                              : 'Cloudflare pendente — use Sincronizar Cloudflare'}
+                          </span>
+                        </div>
+                      )}
+
+                      {canManage && (
+                        <div className="flex items-center justify-end gap-1 pt-1 border-t border-[#e5e6e8] mt-auto flex-wrap">
+                          <button
+                            type="button"
+                            className="btn-ghost text-xs"
+                            disabled={hidingKey === key}
+                            onClick={() => setAppHidden(key, !isHidden)}
+                            title={isHidden ? 'Mostrar aplicação' : 'Ocultar aplicação'}
+                          >
+                            {hidingKey === key ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : isHidden ? (
+                              <Eye className="w-3.5 h-3.5" />
+                            ) : (
+                              <EyeOff className="w-3.5 h-3.5" />
+                            )}
+                            {isHidden ? 'Mostrar' : 'Ocultar'}
+                          </button>
+                          {(app.startCommand || app.stopCommand || app.restartCommand) && (
+                            <>
+                              <button
+                                type="button"
+                                className="btn-ghost text-xs"
+                                disabled={busy || app.running === true}
+                                onClick={() => onCatalogAction(app.id, 'start')}
+                              >
+                                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                                Start
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-ghost text-xs"
+                                disabled={busy || app.running === false}
+                                onClick={() => onCatalogAction(app.id, 'stop')}
+                              >
+                                <Square className="w-3.5 h-3.5" />
+                                Stop
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-ghost text-xs"
+                                disabled={busy}
+                                onClick={() => onCatalogAction(app.id, 'restart')}
+                              >
+                                <RotateCw className="w-3.5 h-3.5" />
+                                Restart
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
