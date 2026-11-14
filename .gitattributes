@@ -1,0 +1,23 @@
+# Finais de linha iguais em Windows, Linux e macOS
+* text=auto eol=lf
+
+# Scripts do Windows continuam com CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binários: o git não tenta mesclar nem converter
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.jar binary
+*.apk binary
+
+# Arquivos gerados: diff recolhido no GitHub
+package-lock.json linguist-generated=true -diff
